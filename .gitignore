@@ -33,3 +33,6 @@
 
 # Dependency libraries
 vendor/
+
+# Build
+bin/
