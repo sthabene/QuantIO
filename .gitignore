@@ -32,7 +32,11 @@
 *.app
 
 # Dependency libraries
-vendor/
+vendor/boost/
+vendor/glfw/
+vendor/imgui/
+vendor/quantlib/
 
 # Build
 bin/
+.vs/
