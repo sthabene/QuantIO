@@ -1,2 +1,2 @@
-# quantio
+# QuantIO
 Quantitative Finance
