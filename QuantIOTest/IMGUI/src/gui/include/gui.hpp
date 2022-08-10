@@ -77,4 +77,27 @@ namespace QuantIO {
 	static QuantIO::Connection connection("..\\..\\misc\\database\\main.db");
 	static QuantIO::Connection::Stmt statement(connection);
 
+	//Getting window position
+	static ImVec2 popupLocation(ImVec2 workPos = ImGui::GetMainViewport()->WorkPos, const float pads = 1.0f) {
+		const float PAD = 20.0f;
+		ImVec2 windowPos;
+		windowPos.x = workPos.x + pads * PAD;
+		windowPos.y = workPos.y + pads * PAD;
+		return windowPos;
+	}
+
+	//Global table flags
+	//Table flags
+	static ImGuiTableFlags tableFlags = ImGuiTableFlags_RowBg |
+		ImGuiTableFlags_BordersV |
+		ImGuiTableFlags_Resizable |
+		ImGuiTableFlags_ContextMenuInBody |
+		ImGuiTableFlags_BordersOuter |
+		//ImGuiTableFlags_Reorderable |
+		ImGuiTableFlags_Hideable |
+		ImGuiTableFlags_SizingStretchSame |
+		//ImGuiTableFlags_Sortable |
+		ImGuiTableFlags_ScrollY |
+		ImGuiTableFlags_NoHostExtendY;
+
 }

@@ -15,19 +15,6 @@ void QuantIOCurrency::DisplayContents() {
 		//Row Height
 		static const float rowHeight = ImGui::GetTextLineHeight() + ImGui::GetStyle().CellPadding.y * 3.0f;
 
-		//Table flags
-		ImGuiTableFlags tableFlags = ImGuiTableFlags_RowBg |
-			ImGuiTableFlags_BordersV |
-			ImGuiTableFlags_Resizable |
-			ImGuiTableFlags_ContextMenuInBody |
-			ImGuiTableFlags_BordersOuter |
-			ImGuiTableFlags_Reorderable |
-			ImGuiTableFlags_Hideable |
-			ImGuiTableFlags_SizingStretchSame |
-			//ImGuiTableFlags_Sortable |
-			ImGuiTableFlags_ScrollY |
-			ImGuiTableFlags_NoHostExtendY;
-
 		//Running the query
 		if (refresh & 1) {
 			tableData = QuantIO::statement.getTableData(query); //Run Query
@@ -79,7 +66,7 @@ void QuantIOCurrency::DisplayContents() {
 		static ImVector<std::string> selections;
 
 		//Table construction
-		if (ImGui::BeginTable(title.c_str(), iColumns, tableFlags, ImVec2(0.0f, maxTableHeight), 0.0f)) {
+		if (ImGui::BeginTable(title.c_str(), iColumns, QuantIO::tableFlags, ImVec2(0.0f, maxTableHeight), 0.0f)) {
 
 			//Make first row (header) always visible
 			ImGui::TableSetupScrollFreeze(0, 1);
@@ -144,6 +131,11 @@ void QuantIOCurrency::DisplayContents() {
 						}
 
 					}
+
+					//Selected row details
+					std::vector<std::string>* selectedRow = currentRow;
+
+					//Booleans for popups
 					bool openOpenPopup = false;
 					bool openEditPopup = false;
 					bool openInsertPopup = false;
@@ -152,13 +144,14 @@ void QuantIOCurrency::DisplayContents() {
 					bool openDeletePopup = false;
 					bool openExitPopup = false;
 
-					if (ImGui::BeginPopupContextItem("CurrenciesPopup")) {
+					if (ImGui::BeginPopupContextItem("ContextPopup")) {
 						selections.clear();
 						//selections.push_back(currentItem->c_str());
 						selections.push_back(currentRow->at(0));
 						if (ImGui::MenuItem("Open", "Enter")) {
-							printf("%s\n", currentRow->at(0).c_str());
 							openOpenPopup = true;
+							printf("%s\n", currentRow->at(0).c_str());
+							//selectedRow = currentRow;
 						};
 
 						//ImGui::Separator();
@@ -176,7 +169,7 @@ void QuantIOCurrency::DisplayContents() {
 						};
 						if (ImGui::MenuItem("Select all", "Ctrl + A")) {
 							for (std::vector <std::string>& v1 : filteredData) {
-								//selections.insert(v1.at(0));
+								selections.push_back(v1.at(0));
 							}
 
 						};
@@ -193,10 +186,58 @@ void QuantIOCurrency::DisplayContents() {
 						ImGui::EndPopup();
 					}
 
+
+					//Open Popup
 					if (openOpenPopup) {
-
+						ImGui::OpenPopup(title.c_str());
+						//openOpenPopup = false;
+						printf("%d\n", (int)openOpenPopup);
 					}
+					static bool unusedOpen = true;
+					if (ImGui::BeginPopupModal(title.c_str(), &unusedOpen, ImGuiWindowFlags_NoSavedSettings)) {
+						ImGui::Text("Details");
 
+						//char* field1 = (char*)selections[0].c_str();
+
+						ImGui::InputText("Code", (char*)selectedRow->at(0).c_str(), 64,
+							ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_ReadOnly);
+
+						ImGui::InputText("Name", (char*)selectedRow->at(1).c_str(), 64, 
+							ImGuiInputTextFlags_ReadOnly);
+
+						ImGui::InputText("Numeric code", (char*)selectedRow->at(2).c_str(), 64,
+							ImGuiInputTextFlags_ReadOnly);
+
+						ImGui::InputText("Symbol", (char*)selectedRow->at(3).c_str(), 64,
+							ImGuiInputTextFlags_ReadOnly);
+
+						// Testing behavior of widgets stacking their own regular popups over the modal.
+						static int item = 1;
+						static float color[4] = { 0.4f, 0.7f, 0.0f, 0.5f };
+						ImGui::Combo("Combo", &item, "aaaa\0bbbb\0cccc\0dddd\0eeee\0\0");
+						//ImGui::ColorEdit4("color", color);
+
+						if (ImGui::Button("Add another modal.."))
+							ImGui::OpenPopup("Stacked 2");
+						ImGui::SetNextWindowPos(QuantIO::popupLocation(ImGui::GetWindowPos(), 1.0f),
+							ImGuiCond_Appearing, ImVec2(0.0f, 0.0f));
+
+						if (ImGui::BeginPopupModal("Stacked 2", &unusedOpen))
+						{
+							ImGui::Text("Hello from Stacked The Second!");
+							if (ImGui::Button("Close")) {
+								ImGui::CloseCurrentPopup();
+								//openCurrenciesPopup = false;
+
+							}
+							ImGui::EndPopup();
+						}
+
+						if (ImGui::Button("Close")) {//ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape)
+							ImGui::CloseCurrentPopup();
+						}
+						ImGui::EndPopup();
+					}
 					ImGui::PopID();
 				}
 			}
@@ -208,4 +249,7 @@ void QuantIOCurrency::DisplayContents() {
 
 	}
 	ImGui::EndChild();
+
+
+
 }

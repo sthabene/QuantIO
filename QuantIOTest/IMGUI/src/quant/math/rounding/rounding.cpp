@@ -15,19 +15,6 @@ void QuantIORounding::DisplayContents() {
 		//Row Height
 		static const float rowHeight = ImGui::GetTextLineHeight() + ImGui::GetStyle().CellPadding.y * 3.0f;
 
-		//Table flags
-		ImGuiTableFlags tableFlags = ImGuiTableFlags_RowBg |
-			ImGuiTableFlags_BordersV |
-			ImGuiTableFlags_Resizable |
-			ImGuiTableFlags_ContextMenuInBody |
-			ImGuiTableFlags_BordersOuter |
-			ImGuiTableFlags_Reorderable |
-			ImGuiTableFlags_Hideable |
-			ImGuiTableFlags_SizingStretchSame |
-			//ImGuiTableFlags_Sortable |
-			ImGuiTableFlags_ScrollY |
-			ImGuiTableFlags_NoHostExtendY;
-
 		//Running the query
 		if (refresh & 1) {
 			tableData = QuantIO::statement.getTableData(query); //Run Query
@@ -79,7 +66,7 @@ void QuantIORounding::DisplayContents() {
 		static ImVector<std::string> selections;
 
 		//Table construction
-		if (ImGui::BeginTable(title.c_str(), iColumns, tableFlags, ImVec2(0.0f, maxTableHeight), 0.0f)) {
+		if (ImGui::BeginTable(title.c_str(), iColumns, QuantIO::tableFlags, ImVec2(0.0f, maxTableHeight), 0.0f)) {
 
 			//Make first row (header) always visible
 			ImGui::TableSetupScrollFreeze(0, 1);
