@@ -34,6 +34,8 @@ int main() {
     //statement.getTable("SELECT CODE, NAME FROM CURRENCY");
 
     Testing testing();
+
+    connection.create_statement("SELECT CODE, NAME FROM CURRENCY");
     
 
     return 0;

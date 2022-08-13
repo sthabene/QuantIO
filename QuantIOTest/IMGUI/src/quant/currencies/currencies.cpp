@@ -1,23 +1,34 @@
 #include "currencies.hpp"
 #include "boost/algorithm/string/join.hpp"
+#include "boost/format.hpp"
+#include "boost/locale.hpp"
 #include <algorithm>
 
-static std::string query = "SELECT CODE, NAME, NUM_CODE, SYMBOL FROM CURRENCY ORDER BY CODE";
+static std::string query = "SELECT CODE, NAME FROM CURRENCY ORDER BY CODE";
 static std::string title = "Currency###";
 static std::vector<std::vector<std::string>> tableData;
 static int refresh = 1;
+
+//Open item
+std::vector<std::string> selectedRow;
+static int selectedItem = 0;
+
 static ImVec2 buttonSz(25.0f * 5.0f, 32.0f); //To change 
 
-void QuantIOCurrency::DisplayContents() {
+std::locale loc("");
+std::locale conv_loc = boost::locale::util::create_info(loc, loc.name());
+std::string output = "u'\xA2'";
 
+void QuantIOCurrency::DisplayContents() {
 	ImGui::BeginChild(title.c_str(), ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysAutoResize);
 	{
+		ImGui::Text("\u00B0");
 		//Row Height
 		static const float rowHeight = ImGui::GetTextLineHeight() + ImGui::GetStyle().CellPadding.y * 3.0f;
 
 		//Running the query
 		if (refresh & 1) {
-			tableData = QuantIO::statement.getTableData(query); //Run Query
+			tableData = QuantIO::dbConnection.getTableData2(query);
 			refresh++;
 		}
 
@@ -44,7 +55,6 @@ void QuantIOCurrency::DisplayContents() {
 		std::vector<std::vector<std::string>> filteredData;
 		if (filter.IsActive()) {
 			for (int i = 1; i <= iRows; i++) {
-				//std::string rowData = std::accumulate(data[i].begin(), data[i].end(), std::string{});
 				std::string rowData = boost::algorithm::join(tableData[i], " ");
 				if (filter.PassFilter(rowData.c_str())) {
 					filteredData.push_back(tableData[i]);
@@ -72,7 +82,7 @@ void QuantIOCurrency::DisplayContents() {
 			ImGui::TableSetupScrollFreeze(0, 1);
 
 			//Column Setup
-			for (int i = 0; i < iColumns; i++) { //Column label
+			for (std::size_t i = 0; i < iColumns; i++) { //Column label
 				if (i == 0) {
 					ImGui::TableSetupColumn(tableData[0][i].c_str(), ImGuiTableColumnFlags_NoHide, 0.0f, i);
 				}
@@ -100,13 +110,13 @@ void QuantIOCurrency::DisplayContents() {
 			static ImGuiListClipper clipper;
 			clipper.Begin(displayRows);
 			while (clipper.Step()) {
-				for (int row = clipper.DisplayStart + startCount; row < clipper.DisplayEnd + startCount; row++) {
+				for (std::size_t row = clipper.DisplayStart + startCount; row < clipper.DisplayEnd + startCount; row++) {
 
 					std::vector<std::string>* currentRow = &filteredData[row];
 					ImGui::PushID(row);
 					ImGui::TableNextRow(ImGuiTableRowFlags_None, rowHeight);
 
-					for (int column = 0; column < (int)currentRow->size(); column++) {
+					for (std::size_t column = 0; column < currentRow->size(); column++) {
 						ImGui::TableSetColumnIndex(column);
 						std::string* currentItem = &currentRow->at(column);
 						const bool itemIsSelected = selections.contains(currentRow->at(0));
@@ -116,24 +126,18 @@ void QuantIOCurrency::DisplayContents() {
 							if (ImGui::GetIO().KeyCtrl) {
 								if (itemIsSelected) {
 									selections.find_erase_unsorted(currentRow->at(0));
-									//selections.find_erase_unsorted(currentItem->c_str());
 								}
 								else {
 									selections.push_back(currentRow->at(0));
-									//selections.push_back(currentItem->c_str());
 								}
 							}
 							else {
 								selections.clear();
 								selections.push_back(currentRow->at(0));
-								//selections.push_back(currentItem->c_str());
 							}
 						}
 
 					}
-
-					//Selected row details
-					std::vector<std::string>* selectedRow = currentRow;
 
 					//Booleans for popups
 					bool openOpenPopup = false;
@@ -144,23 +148,27 @@ void QuantIOCurrency::DisplayContents() {
 					bool openDeletePopup = false;
 					bool openExitPopup = false;
 
+					//Context menu
 					if (ImGui::BeginPopupContextItem("ContextPopup")) {
 						selections.clear();
-						//selections.push_back(currentItem->c_str());
 						selections.push_back(currentRow->at(0));
 						if (ImGui::MenuItem("Open", "Enter")) {
+							//Populate selected item
+							boost::format openQuery = boost::format("SELECT CODE, NAME, NUM_CODE, SYMBOL, FRAC_SYMBOL, FRAC_UNIT FROM CURRENCY WHERE CODE = '%1%'") % currentRow->at(0);
+							selectedRow = QuantIO::dbConnection.getTableData2(openQuery.str(), false)[0];
+							//Then open dialogue
 							openOpenPopup = true;
-							printf("%s\n", currentRow->at(0).c_str());
-							//selectedRow = currentRow;
 						};
-
-						//ImGui::Separator();
 						if (ImGui::MenuItem("Edit", "Ctrl + Enter")) {
-							//openCurrenciesPopup = true;
+							openEditPopup = true;
 						};
 						ImGui::Separator();
-						ImGui::MenuItem("Insert", "Insert");
-						ImGui::MenuItem("Duplicate", "Ctrl + D");
+						if (ImGui::MenuItem("Insert", "Insert")) {
+							openInsertPopup = true;
+						};
+						if (ImGui::MenuItem("Duplicate", "Ctrl + D")) {
+							openDuplicatePopup = true;
+						};
 						if (ImGui::MenuItem("Copy line", "Ctrl + C")) {
 							ImGui::LogToClipboard();
 							std::string copy = boost::algorithm::join(*currentRow, "\t");
@@ -175,47 +183,81 @@ void QuantIOCurrency::DisplayContents() {
 						};
 						ImGui::Separator();
 						if (ImGui::BeginMenu("Delete")) {
-							ImGui::MenuItem("Logical Delete", "Del");
+							if (ImGui::MenuItem("Logical Delete", "Del")) {
+								openDeletePopup = true;
+							};
 							ImGui::MenuItem("Physical Delete", "Shift + Del");
 							ImGui::EndMenu();
 						}
 						ImGui::Separator();
 						if (ImGui::MenuItem("Exit", "Esc")) {
-
+							openExitPopup = true;
 						};
 						ImGui::EndPopup();
 					}
 
-
 					//Open Popup
 					if (openOpenPopup) {
+						selectedItem++;
 						ImGui::OpenPopup(title.c_str());
-						//openOpenPopup = false;
-						printf("%d\n", (int)openOpenPopup);
+						//printf("%d\n", (int)openOpenPopup);
+						openOpenPopup = false;
 					}
-					static bool unusedOpen = true;
+
+					bool unusedOpen = true;
+					ImGui::SetNextWindowPos(QuantIO::popupLocation(), ImGuiCond_Appearing, ImVec2(0.0f, 0.0f));
+					ImGui::SetNextWindowSize(ImVec2(800, 500), ImGuiCond_FirstUseEver);
 					if (ImGui::BeginPopupModal(title.c_str(), &unusedOpen, ImGuiWindowFlags_NoSavedSettings)) {
 						ImGui::Text("Details");
 
-						//char* field1 = (char*)selections[0].c_str();
-
-						ImGui::InputText("Code", (char*)selectedRow->at(0).c_str(), 64,
+						//Open modal details
+						ImGui::InputText("Code", (char*)selectedRow[0].c_str(), 64,
 							ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_ReadOnly);
 
-						ImGui::InputText("Name", (char*)selectedRow->at(1).c_str(), 64, 
+						ImGui::InputText("Name", (char*)selectedRow.at(1).c_str(), 64,
 							ImGuiInputTextFlags_ReadOnly);
 
-						ImGui::InputText("Numeric code", (char*)selectedRow->at(2).c_str(), 64,
+						ImGui::InputText("Numeric code", (char*)selectedRow.at(2).c_str(), 64,
+							ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_CharsDecimal);
+
+						ImGui::InputText("Symbol", (char*)selectedRow.at(3).c_str(), 64,
 							ImGuiInputTextFlags_ReadOnly);
 
-						ImGui::InputText("Symbol", (char*)selectedRow->at(3).c_str(), 64,
+						ImGui::InputText("Fraction Symbol", (char*)selectedRow.at(4).c_str(), 64,
 							ImGuiInputTextFlags_ReadOnly);
 
-						// Testing behavior of widgets stacking their own regular popups over the modal.
-						static int item = 1;
-						static float color[4] = { 0.4f, 0.7f, 0.0f, 0.5f };
-						ImGui::Combo("Combo", &item, "aaaa\0bbbb\0cccc\0dddd\0eeee\0\0");
-						//ImGui::ColorEdit4("color", color);
+						std::string fracSymbol = selectedRow.at(5);
+						const char* fracSymbols[6] = { "1", "10", "100", "1000", "10000", "100000" };
+						int originalItem = 
+							(fracSymbol == "1") ? 0 : 
+							(fracSymbol == "10") ? 1 : 
+							(fracSymbol == "100") ? 2 : 
+							(fracSymbol == "1000") ? 3 : 
+							(fracSymbol == "10000") ? 4 : 5;
+												
+						int itemCurrent = originalItem;
+						const char* fracPreview = fracSymbols[itemCurrent];
+
+						if (ImGui::BeginCombo("Fractions Per Unit", fracPreview,
+							ImGuiComboFlags_PopupAlignLeft)) {
+							for (int n = 0; n < IM_ARRAYSIZE(fracSymbols); n++) {
+
+								const bool isSelected = (itemCurrent == n);
+								
+								if (ImGui::Selectable(fracSymbols[n], isSelected)) {
+									itemCurrent = n;
+								}
+
+								if (isSelected) {
+									ImGui::SetItemDefaultFocus();
+								}
+							}
+							ImGui::EndCombo();
+						}
+
+						ImGui::SameLine();
+						HelpMarker("Number of fractionary parts in a unit");
+
 
 						if (ImGui::Button("Add another modal.."))
 							ImGui::OpenPopup("Stacked 2");
@@ -249,7 +291,5 @@ void QuantIOCurrency::DisplayContents() {
 
 	}
 	ImGui::EndChild();
-
-
 
 }

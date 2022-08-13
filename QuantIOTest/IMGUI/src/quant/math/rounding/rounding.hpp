@@ -3,6 +3,6 @@
 
 class QuantIORounding : public QuantIO::Window {
 public:
-	QuantIORounding() : Window("Rounding", "QuantIO", true) { };
+	QuantIORounding() : Window("Rounding", "QuantIO", false) { };
 	void DisplayContents() override;
 };

@@ -17,7 +17,7 @@ void QuantIORounding::DisplayContents() {
 
 		//Running the query
 		if (refresh & 1) {
-			tableData = QuantIO::statement.getTableData(query); //Run Query
+			tableData = QuantIO::dbConnection.getTableData2(query);
 			refresh++;
 		}
 

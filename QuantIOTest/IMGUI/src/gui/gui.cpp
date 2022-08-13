@@ -40,6 +40,8 @@ void QuantIO::AddWindows() {
     AddLayoutPopups(QuantIO::ActiveWindows);
     AddTables(QuantIO::ActiveWindows);
     AddToolsWindows(QuantIO::ActiveWindows);
+    QuantIO::ActiveWindows.push_back(QuantIOCurrency());
+    QuantIO::ActiveWindows.push_back(QuantIORounding());
 }
 
 //Windows Menu
@@ -103,39 +105,18 @@ void WindowsMenu() {
         ImGui::EndMenu();
     }
     ImGui::Separator();
-    if (ImGui::MenuItem("Currencies")) {
-        static int i = 0;
-        for (QuantIO::Window& window : QuantIO::ActiveWindows) {
-            if (window.Name == "Currency") {
-                i += 1;
-                if (!window.Open) {
-                    window.DoOpen();
-                }
+    for (QuantIO::Window& quantio : QuantIO::ActiveWindows) {
+        if (quantio.Type == "QuantIO" && ImGui::MenuItem(quantio.Name, NULL, quantio.Open, true)) {
+            if (!quantio.Open) {
+                quantio.DoOpen();
             }
-        }
-        if (i == 0) {
-            QuantIO::ActiveWindows.push_back(QuantIOCurrency());
+            selectedTab = quantio.Name; //Change to this tab
         }
     }
-    if (ImGui::MenuItem("Rounding")) {
-        static int i = 0;
-        for (QuantIO::Window& window : QuantIO::ActiveWindows) {
-            if (window.Name == "Rounding") {
-                i += 1;
-                if (!window.Open) {
-                    window.DoOpen();
-                }
-            }
-        }
-        if (i == 0) {
-            QuantIO::ActiveWindows.push_back(QuantIORounding());
-        }
-    }
-
     ImGui::Separator();
     if (ImGui::BeginMenu("Configuration")) {
         if (ImGui::MenuItem("Demo Window", NULL, &showDemoWindow)) {
-            //statusBarMessage = "Demo Window";
+            selectedTab = "Demo Window";
         };
         ImGui::EndMenu();
     }

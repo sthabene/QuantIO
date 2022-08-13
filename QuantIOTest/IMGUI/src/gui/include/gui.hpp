@@ -74,8 +74,7 @@ namespace QuantIO {
 
 
 	//DB Connection
-	static QuantIO::Connection connection("..\\..\\misc\\database\\main.db");
-	static QuantIO::Connection::Stmt statement(connection);
+	static QuantIO::Connection dbConnection("..\\..\\misc\\database\\main.db");
 
 	//Getting window position
 	static ImVec2 popupLocation(ImVec2 workPos = ImGui::GetMainViewport()->WorkPos, const float pads = 1.0f) {

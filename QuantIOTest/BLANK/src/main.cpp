@@ -3,20 +3,16 @@
 #include <sstream>
 
 int main() {
-    std::string query = "SELECT CODE, NAME, NUM_CODE, SYMBOL FROM CURRENCY";
+
     std::vector<std::string> result;
+    std::vector<std::string> result2 = {"ABC", "DEF", "GHJ"};
 
-    std::string query2 = query.substr(7, query.find("FROM") - 7);
-    //std::cout << query2 << std::endl;
-    std::stringstream ss(query2);
-
-    while (ss.good()) {
-        std::string substr;
-        std::getline(ss, substr, ',');
-        result.push_back(substr);
+    for (std::size_t i = 0; i < result2.size(); i++) {
+        result.push_back(result2[i]);
     }
+    
+    for (std::string str : result)     
+        std::cout << str << std::endl;
 
-    for (std::string out : result)
-        std::cout << out << std::endl;
 	return 0;
 }

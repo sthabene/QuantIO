@@ -3,6 +3,6 @@
 
 class QuantIOCurrency : public QuantIO::Window {
 public:
-	QuantIOCurrency() : Window("Currency", "QuantIO", true) { };
+	QuantIOCurrency() : Window("Currencies", "QuantIO", false) { };
 	void DisplayContents() override;
 };

@@ -107,4 +107,36 @@ namespace QuantIO {
     sqlite3_stmt * Connection::Stmt::get_c_obj() {
         return stmt_;
     }
+
+    std::vector<std::vector<std::string>> Connection::getTableData2(const std::string& sql, bool header) {
+        //Prepared statement
+        Stmt statement(sql, *this);
+        printf("%s\n", sql.c_str());
+
+        //Stores the table return data
+        const std::size_t columns = statement.get_col_count();
+        std::vector<std::vector<std::string>> tableVec;
+
+        if (header) {
+            std::vector<std::string> v0; //Header
+            v0.reserve(columns);
+            for (std::size_t column = 0; column < columns; column++) {
+                v0.push_back(statement.get_col_name(column));
+            }
+            tableVec.push_back(v0);
+        }
+
+        std::string data;
+        while (statement.step()) {
+            std::vector<std::string> v1;
+            v1.reserve(columns);
+            for (std::size_t column = 0; column < columns; column++) {
+                data = statement.get_col<std::string>(column);
+                v1.push_back(data.empty() ? "" : data);
+            }
+            tableVec.push_back(v1);
+        }
+        statement.reset();
+        return tableVec;
+    }
 };
