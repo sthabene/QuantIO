@@ -1,10 +1,16 @@
+//Disable warnings
+#if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_WARNINGS)
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include "currencies.hpp"
 #include "boost/algorithm/string/join.hpp"
 #include "boost/format.hpp"
 #include "boost/locale.hpp"
+#include "utf8.h"
 #include <algorithm>
 
-static std::string query = "SELECT CODE, NAME FROM CURRENCY ORDER BY CODE";
+static std::string query = "SELECT CODE, NAME, SYMBOL FROM CURRENCY ORDER BY CODE";
 static std::string title = "Currency###";
 static std::vector<std::vector<std::string>> tableData;
 static int refresh = 1;
@@ -15,15 +21,9 @@ static int selectedItem = 0;
 
 static ImVec2 buttonSz(25.0f * 5.0f, 32.0f); //To change 
 
-std::locale loc("");
-std::locale conv_loc = boost::locale::util::create_info(loc, loc.name());
-std::string output = "u'\xA2'";
-
 void QuantIOCurrency::DisplayContents() {
 	ImGui::BeginChild(title.c_str(), ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysAutoResize);
 	{
-		ImGui::Text("\u00B0");
-		//Row Height
 		static const float rowHeight = ImGui::GetTextLineHeight() + ImGui::GetStyle().CellPadding.y * 3.0f;
 
 		//Running the query
@@ -258,7 +258,7 @@ void QuantIOCurrency::DisplayContents() {
 						ImGui::SameLine();
 						HelpMarker("Number of fractionary parts in a unit");
 
-
+						ImGui::Separator();
 						if (ImGui::Button("Add another modal.."))
 							ImGui::OpenPopup("Stacked 2");
 						ImGui::SetNextWindowPos(QuantIO::popupLocation(ImGui::GetWindowPos(), 1.0f),
@@ -274,10 +274,11 @@ void QuantIOCurrency::DisplayContents() {
 							}
 							ImGui::EndPopup();
 						}
-
+						ImGui::SameLine();
 						if (ImGui::Button("Close")) {//ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape)
 							ImGui::CloseCurrentPopup();
 						}
+						//ImGui::SetItemDefaultFocus();
 						ImGui::EndPopup();
 					}
 					ImGui::PopID();

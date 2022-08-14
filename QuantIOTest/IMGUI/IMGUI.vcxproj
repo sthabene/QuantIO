@@ -100,7 +100,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);PROJECT_DIR=R"($(ProjectDir))"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)vendor\quantlib\;$(SolutionDir)vendor\boost\;$(ProjectDir)src\quant\;$(ProjectDir)src\connector\include\;$(ProjectDir)src\gui\include\;$(SolutionDir)vendor\sqlite\;$(SolutionDir)vendor\imgui\;$(SolutionDir)vendor\imgui\backends;$(SolutionDir)vendor\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)vendor\utfcpp\source;$(SolutionDir)vendor\quantlib\;$(SolutionDir)vendor\boost\;$(ProjectDir)src\quant\;$(ProjectDir)src\connector\include\;$(ProjectDir)src\gui\include\;$(SolutionDir)vendor\sqlite\;$(SolutionDir)vendor\imgui\;$(SolutionDir)vendor\imgui\backends;$(SolutionDir)vendor\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
