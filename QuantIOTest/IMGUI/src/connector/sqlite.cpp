@@ -108,7 +108,8 @@ namespace QuantIO {
         return stmt_;
     }
 
-    std::vector<std::vector<std::string>> Connection::getTableData2(const std::string& sql, bool header) {
+    std::vector<std::vector<std::string>> Connection::getTableData2(const std::string& sql, bool header, 
+        bool transpose) {
         //Prepared statement
         Stmt statement(sql, *this);
         printf("%s\n", sql.c_str());
@@ -137,6 +138,18 @@ namespace QuantIO {
             tableVec.push_back(v1);
         }
         statement.reset();
+
+        if (transpose) {
+            std::vector<std::vector<std::string>> tresult(
+                tableVec[0].size(), std::vector<std::string>(tableVec.size())
+            );
+            for (std::vector<std::string>::size_type i = 0; i < tableVec[0].size(); i++) {
+                for (std::vector<std::string>::size_type j = 0; j < tableVec.size(); j++) {
+                    tresult[i][j] = tableVec[j][i];
+                }
+            }
+            tableVec = tresult;
+        }
         return tableVec;
     }
 };

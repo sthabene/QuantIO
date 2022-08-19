@@ -69,7 +69,8 @@ namespace QuantIO {
         sqlite3 * get_c_obj();
 
         //Used to obtain table data
-        std::vector<std::vector<std::string>> getTableData2(const std::string& sql, bool header = true);
+        std::vector<std::vector<std::string>> getTableData2(const std::string& sql, bool header = true,
+            bool transpose = false);
 
     private:
         /// sqlite C API's DB connection obj

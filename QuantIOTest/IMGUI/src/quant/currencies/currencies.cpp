@@ -5,10 +5,13 @@
 
 #include "currencies.hpp"
 #include "boost/algorithm/string/join.hpp"
+#include "boost/algorithm/string.hpp"
 #include "boost/format.hpp"
 #include "boost/locale.hpp"
 #include "utf8.h"
 #include <algorithm>
+
+#define IMGUI_LEFT_LABEL(func, label, ...) (ImGui::TextUnformatted(label), ImGui::SameLine(), func("##" label, __VA_ARGS__))
 
 static std::string query = "SELECT CODE, NAME, SYMBOL FROM CURRENCY ORDER BY CODE";
 static std::string title = "Currency###";
@@ -17,6 +20,7 @@ static int refresh = 1;
 
 //Open item
 std::vector<std::string> selectedRow;
+std::vector<std::string> rounding;
 static int selectedItem = 0;
 
 static ImVec2 buttonSz(25.0f * 5.0f, 32.0f); //To change 
@@ -154,8 +158,10 @@ void QuantIOCurrency::DisplayContents() {
 						selections.push_back(currentRow->at(0));
 						if (ImGui::MenuItem("Open", "Enter")) {
 							//Populate selected item
-							boost::format openQuery = boost::format("SELECT CODE, NAME, NUM_CODE, SYMBOL, FRAC_SYMBOL, FRAC_UNIT FROM CURRENCY WHERE CODE = '%1%'") % currentRow->at(0);
-							selectedRow = QuantIO::dbConnection.getTableData2(openQuery.str(), false)[0];
+							std::string roundQuery = "SELECT LABEL FROM ROUNDING";
+							rounding = QuantIO::dbConnection.getTableData2(roundQuery.c_str(), false, true)[0];
+							boost::format openQuery = boost::format("SELECT T1.CODE, T1.NAME, T1.NUM_CODE, T1.SYMBOL, T1.FRAC_SYMBOL, T1.FRAC_UNIT, T1.FORMAT, T2.LABEL, T1.TRIANGU FROM CURRENCY T1, ROUNDING T2 WHERE T2.ROUNDING_ID = T1.ROUNDING AND T1.CODE = '%1%'") % currentRow->at(0);
+							selectedRow = QuantIO::dbConnection.getTableData2(openQuery.str(), false, false)[0];
 							//Then open dialogue
 							openOpenPopup = true;
 						};
@@ -206,14 +212,19 @@ void QuantIOCurrency::DisplayContents() {
 
 					bool unusedOpen = true;
 					ImGui::SetNextWindowPos(QuantIO::popupLocation(), ImGuiCond_Appearing, ImVec2(0.0f, 0.0f));
-					ImGui::SetNextWindowSize(ImVec2(800, 500), ImGuiCond_FirstUseEver);
-					if (ImGui::BeginPopupModal(title.c_str(), &unusedOpen, ImGuiWindowFlags_NoSavedSettings)) {
-						ImGui::Text("Details");
+					ImGui::SetNextWindowSize(ImVec2(800, 700), ImGuiCond_FirstUseEver);
+					if (ImGui::BeginPopupModal(title.c_str(), &unusedOpen, ImGuiWindowFlags_NoResize |ImGuiWindowFlags_NoSavedSettings)) {
+						ImGui::Spacing();
+						ImGui::SetCursorPosX(400);
+						ImGui::TextDisabled("Details");
+						ImGui::Spacing();
 
+						ImGui::Indent(100.0f);
+						ImGui::PushItemWidth(rowHeight * 15.0f);
 						//Open modal details
 						ImGui::InputText("Code", (char*)selectedRow[0].c_str(), 64,
-							ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_ReadOnly);
-
+							ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_ReadOnly | ImGuiDir_Left);
+						
 						ImGui::InputText("Name", (char*)selectedRow.at(1).c_str(), 64,
 							ImGuiInputTextFlags_ReadOnly);
 
@@ -258,23 +269,105 @@ void QuantIOCurrency::DisplayContents() {
 						ImGui::SameLine();
 						HelpMarker("Number of fractionary parts in a unit");
 
-						ImGui::Separator();
-						if (ImGui::Button("Add another modal.."))
-							ImGui::OpenPopup("Stacked 2");
-						ImGui::SetNextWindowPos(QuantIO::popupLocation(ImGui::GetWindowPos(), 1.0f),
-							ImGuiCond_Appearing, ImVec2(0.0f, 0.0f));
+						
+						
+						ImGui::InputText("Triangualtion", (char*)selectedRow.at(8).c_str(), 64,
+							ImGuiInputTextFlags_ReadOnly);
 
-						if (ImGui::BeginPopupModal("Stacked 2", &unusedOpen))
-						{
-							ImGui::Text("Hello from Stacked The Second!");
-							if (ImGui::Button("Close")) {
-								ImGui::CloseCurrentPopup();
-								//openCurrenciesPopup = false;
-
-							}
-							ImGui::EndPopup();
-						}
 						ImGui::SameLine();
+						HelpMarker("Cross currency triangulation");
+						ImGui::PopItemWidth();
+						ImGui::Unindent(100.0f);
+
+						ImGui::Spacing();
+						ImGui::Separator();
+						ImGui::Spacing();
+
+						if (ImGui::BeginTabBar("CurrencyTabBar")) {
+							if (ImGui::BeginTabItem("Rouding")) {
+								ptrdiff_t pos = std::find(rounding.begin(), rounding.end(), selectedRow.at(7))
+									- rounding.begin();
+								int currentRoundingIndex = pos;
+								std::string currentRounding = rounding[currentRoundingIndex];
+								ImGui::Spacing();
+								ImGui::Indent(15.0f);
+								ImGui::PushItemWidth(rowHeight * 15.0f);
+								if (ImGui::BeginCombo("##Rounding", currentRounding.c_str())) {
+									for (int n = 0; n < rounding.size(); n++) {
+										const bool is_selected = (currentRoundingIndex == n);
+										if (ImGui::Selectable(rounding[n].c_str(), is_selected))
+											//currentRoundingIndex = n;
+											if (is_selected)
+												ImGui::SetItemDefaultFocus();
+									}
+									ImGui::EndCombo();
+								}
+								ImGui::PopItemWidth();
+
+								ImGui::Text("Type: Closest");
+								ImGui::Text("Precision: 5");
+								ImGui::Text("Digit: 5");
+
+								ImGui::Unindent(15.0f);
+
+								ImGui::EndTabItem();
+							}
+							if (ImGui::BeginTabItem("Format")) {
+								ImGui::Spacing();
+								ImGui::Indent(15.0f);
+								ImGui::PushItemWidth(rowHeight * 15.0f);
+								ImGui::InputText("Format", (char*)selectedRow.at(6).c_str(), 64,
+									ImGuiInputTextFlags_ReadOnly);
+								ImGui::PopItemWidth();
+								ImGui::SameLine();
+								HelpMarker("(1) value (2) code (3) symbol");
+
+								boost::format fmt;
+								if (boost::contains(selectedRow.at(6), "3")) {
+									fmt = boost::format(selectedRow.at(6)) % 12345.67891 % 
+										selectedRow[0] % selectedRow[3];
+								}
+								else {
+									fmt = boost::format(selectedRow.at(6)) % 12345.67891 % selectedRow[0];
+								};
+								ImGui::Indent(15.0f);
+								
+								ImGui::TextDisabled(fmt.str().c_str());
+								ImGui::Unindent(30.0f);
+								ImGui::EndTabItem();
+							}
+							if (ImGui::BeginTabItem("Minor Unit Codes")) {
+								ImGui::Spacing();
+								ImGui::Indent(15.0f);
+								ImGui::Text("Minor unit codes, e.g. GBp, GBX for GBP");
+								ImGui::Unindent(15.0f);
+								ImGui::EndTabItem();
+							}
+							ImGui::EndTabBar();
+						}
+
+						//Close button
+						ImVec2 cursorPos = ImGui::GetCursorPos();
+						cursorPos.y = 700 - 1.5f * buttonSz.y;
+						ImGui::SetCursorPos(cursorPos);
+
+						ImGui::Separator();
+						//if (ImGui::Button("Add another modal.."))
+						//	ImGui::OpenPopup("Stacked 2");
+						//ImGui::SetNextWindowPos(QuantIO::popupLocation(ImGui::GetWindowPos(), 1.0f),
+						//	ImGuiCond_Appearing, ImVec2(0.0f, 0.0f));
+
+						//if (ImGui::BeginPopupModal("Stacked 2", &unusedOpen))
+						//{
+						//	ImGui::Text("Hello from Stacked The Second!");
+						//	if (ImGui::Button("Close")) {
+						//		ImGui::CloseCurrentPopup();
+						//		//openCurrenciesPopup = false;
+
+						//	}
+						//	ImGui::EndPopup();
+						//}
+						//ImGui::SameLine();
 						if (ImGui::Button("Close")) {//ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape)
 							ImGui::CloseCurrentPopup();
 						}
