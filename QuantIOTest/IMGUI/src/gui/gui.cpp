@@ -3,6 +3,7 @@
 #include "guilayoutpopups.hpp"
 #include "guitables.hpp"
 #include "guitools.hpp"
+#include "guiaddons.hpp"
 #include "currencies\currencies.hpp"
 #include "math\rounding\rounding.hpp"
 
@@ -42,11 +43,23 @@ void QuantIO::AddWindows() {
     AddToolsWindows(QuantIO::ActiveWindows);
     QuantIO::ActiveWindows.push_back(QuantIOCurrency());
     QuantIO::ActiveWindows.push_back(QuantIORounding());
+    QuantIO::ActiveWindows.push_back(AddonsDatePicker());
 }
 
 //Windows Menu
 void WindowsMenu() {
     if (ImGui::BeginMenu("Examples")) {
+        if (ImGui::BeginMenu("Addons")) {
+            for (QuantIO::Window& addon : QuantIO::ActiveWindows) {
+                if (addon.Type == "Addons" && ImGui::MenuItem(addon.Name, NULL, addon.Open, true)) {
+                    if (!addon.Open) {
+                        addon.DoOpen();
+                    }
+                    selectedTab = addon.Name; //Change to this tab
+                }
+            }
+            ImGui::EndMenu();
+        }
         if (ImGui::BeginMenu("Widgets")) {
             for (QuantIO::Window& widget : QuantIO::ActiveWindows) {
                 if (widget.Type == "Widgets" && ImGui::MenuItem(widget.Name, NULL, widget.Open, true)) {

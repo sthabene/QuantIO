@@ -11,9 +11,13 @@
 #include "utf8.h"
 #include <algorithm>
 
+#ifndef NO_IMGUIDATECHOOSER
+#include <time.h>   // very common plain c header file used only by DateChooser
+#endif //NO_IMGUIDATECHOOSER
+
 #define IMGUI_LEFT_LABEL(func, label, ...) (ImGui::TextUnformatted(label), ImGui::SameLine(), func("##" label, __VA_ARGS__))
 
-static std::string query = "SELECT CODE, NAME, SYMBOL FROM CURRENCY ORDER BY CODE";
+static std::string query = "SELECT CODE, NAME, SYMBOL, FRAC_UNIT FROM CURRENCY ORDER BY CODE";
 static std::string title = "Currency###";
 static std::vector<std::vector<std::string>> tableData;
 static int refresh = 1;
@@ -21,13 +25,27 @@ static int refresh = 1;
 //Open item
 std::vector<std::string> selectedRow;
 std::vector<std::string> rounding;
-static int selectedItem = 0;
+ImGuiInputTextFlags popupInputFlags = ImGuiInputTextFlags_None;
+static int frac = 0;
 
 static ImVec2 buttonSz(25.0f * 5.0f, 32.0f); //To change 
 
+inline std::string getRoundingType(std::string roundingType) {
+
+	std::string m_roudingType =
+		(roundingType == "1") ? "Up" :
+		(roundingType == "0") ? "None" :
+		(roundingType == "2") ? "Down" :
+		(roundingType == "3") ? "Closest" :
+		(roundingType == "5") ? "Ceiling" : "Floor";
+
+	return m_roudingType;
+}
+
 void QuantIOCurrency::DisplayContents() {
-	ImGui::BeginChild(title.c_str(), ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysAutoResize);
+	ImGui::BeginChild("Currencies", ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysAutoResize);
 	{
+
 		static const float rowHeight = ImGui::GetTextLineHeight() + ImGui::GetStyle().CellPadding.y * 3.0f;
 
 		//Running the query
@@ -80,7 +98,7 @@ void QuantIOCurrency::DisplayContents() {
 		static ImVector<std::string> selections;
 
 		//Table construction
-		if (ImGui::BeginTable(title.c_str(), iColumns, QuantIO::tableFlags, ImVec2(0.0f, maxTableHeight), 0.0f)) {
+		if (ImGui::BeginTable("Currencies", iColumns, QuantIO::tableFlags, ImVec2(0.0f, maxTableHeight), 0.0f)) {
 
 			//Make first row (header) always visible
 			ImGui::TableSetupScrollFreeze(0, 1);
@@ -143,6 +161,7 @@ void QuantIOCurrency::DisplayContents() {
 
 					}
 
+										
 					//Booleans for popups
 					bool openOpenPopup = false;
 					bool openEditPopup = false;
@@ -156,16 +175,27 @@ void QuantIOCurrency::DisplayContents() {
 					if (ImGui::BeginPopupContextItem("ContextPopup")) {
 						selections.clear();
 						selections.push_back(currentRow->at(0));
+
+						
+
 						if (ImGui::MenuItem("Open", "Enter")) {
 							//Populate selected item
+							popupInputFlags = ImGuiInputTextFlags_ReadOnly;
 							std::string roundQuery = "SELECT LABEL FROM ROUNDING";
 							rounding = QuantIO::dbConnection.getTableData2(roundQuery.c_str(), false, true)[0];
-							boost::format openQuery = boost::format("SELECT T1.CODE, T1.NAME, T1.NUM_CODE, T1.SYMBOL, T1.FRAC_SYMBOL, T1.FRAC_UNIT, T1.FORMAT, T2.LABEL, T1.TRIANGU FROM CURRENCY T1, ROUNDING T2 WHERE T2.ROUNDING_ID = T1.ROUNDING AND T1.CODE = '%1%'") % currentRow->at(0);
+							boost::format openQuery = boost::format("SELECT T1.CODE, T1.NAME, T1.NUM_CODE, T1.SYMBOL, T1.FRAC_SYMBOL, T1.FRAC_UNIT, T1.FORMAT, T1.TRIANGU, T2.LABEL, T2.TYPE, T2.PRECISION, T2.DIGIT FROM CURRENCY T1, ROUNDING T2 WHERE T2.ROUNDING_ID = T1.ROUNDING AND T1.CODE = '%1%'") % currentRow->at(0);
 							selectedRow = QuantIO::dbConnection.getTableData2(openQuery.str(), false, false)[0];
 							//Then open dialogue
 							openOpenPopup = true;
 						};
+
 						if (ImGui::MenuItem("Edit", "Ctrl + Enter")) {
+							popupInputFlags = ImGuiInputTextFlags_None;
+							std::string roundQuery = "SELECT LABEL FROM ROUNDING";
+							rounding = QuantIO::dbConnection.getTableData2(roundQuery.c_str(), false, true)[0];
+							boost::format openQuery = boost::format("SELECT T1.CODE, T1.NAME, T1.NUM_CODE, T1.SYMBOL, T1.FRAC_SYMBOL, T1.FRAC_UNIT, T1.FORMAT, T1.TRIANGU, T2.LABEL, T2.TYPE, T2.PRECISION, T2.DIGIT FROM CURRENCY T1, ROUNDING T2 WHERE T2.ROUNDING_ID = T1.ROUNDING AND T1.CODE = '%1%'") % currentRow->at(0);
+							selectedRow = QuantIO::dbConnection.getTableData2(openQuery.str(), false, false)[0];
+
 							openEditPopup = true;
 						};
 						ImGui::Separator();
@@ -204,10 +234,17 @@ void QuantIOCurrency::DisplayContents() {
 
 					//Open Popup
 					if (openOpenPopup) {
-						selectedItem++;
+						title = "Currency: Read-only mode";
+						ImGui::OpenPopup(title.c_str());
+						//openOpenPopup = false;
+					}
+
+					//Open Popup
+					if (openEditPopup) {
+						title = "Currency: Edit mode";
 						ImGui::OpenPopup(title.c_str());
 						//printf("%d\n", (int)openOpenPopup);
-						openOpenPopup = false;
+						//openEditPopup = false;
 					}
 
 					bool unusedOpen = true;
@@ -218,24 +255,24 @@ void QuantIOCurrency::DisplayContents() {
 						ImGui::SetCursorPosX(400);
 						ImGui::TextDisabled("Details");
 						ImGui::Spacing();
-
+						
 						ImGui::Indent(100.0f);
 						ImGui::PushItemWidth(rowHeight * 15.0f);
 						//Open modal details
 						ImGui::InputText("Code", (char*)selectedRow[0].c_str(), 64,
-							ImGuiInputTextFlags_CharsUppercase | ImGuiInputTextFlags_ReadOnly | ImGuiDir_Left);
+							ImGuiInputTextFlags_CharsUppercase | ImGuiDir_Left | popupInputFlags);
 						
 						ImGui::InputText("Name", (char*)selectedRow.at(1).c_str(), 64,
-							ImGuiInputTextFlags_ReadOnly);
+							popupInputFlags);
 
 						ImGui::InputText("Numeric code", (char*)selectedRow.at(2).c_str(), 64,
-							ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_CharsDecimal);
+							popupInputFlags | ImGuiInputTextFlags_CharsDecimal);
 
 						ImGui::InputText("Symbol", (char*)selectedRow.at(3).c_str(), 64,
-							ImGuiInputTextFlags_ReadOnly);
+							popupInputFlags);
 
 						ImGui::InputText("Fraction Symbol", (char*)selectedRow.at(4).c_str(), 64,
-							ImGuiInputTextFlags_ReadOnly);
+							popupInputFlags);
 
 						std::string fracSymbol = selectedRow.at(5);
 						const char* fracSymbols[6] = { "1", "10", "100", "1000", "10000", "100000" };
@@ -245,8 +282,12 @@ void QuantIOCurrency::DisplayContents() {
 							(fracSymbol == "100") ? 2 : 
 							(fracSymbol == "1000") ? 3 : 
 							(fracSymbol == "10000") ? 4 : 5;
-												
-						int itemCurrent = originalItem;
+						
+
+						static int itemCurrent = 0;
+						if (openEditPopup || openOpenPopup) {
+							itemCurrent = originalItem;
+						}
 						const char* fracPreview = fracSymbols[itemCurrent];
 
 						if (ImGui::BeginCombo("Fractions Per Unit", fracPreview,
@@ -257,6 +298,7 @@ void QuantIOCurrency::DisplayContents() {
 								
 								if (ImGui::Selectable(fracSymbols[n], isSelected)) {
 									itemCurrent = n;
+									//itemCurrent = n;
 								}
 
 								if (isSelected) {
@@ -271,8 +313,8 @@ void QuantIOCurrency::DisplayContents() {
 
 						
 						
-						ImGui::InputText("Triangualtion", (char*)selectedRow.at(8).c_str(), 64,
-							ImGuiInputTextFlags_ReadOnly);
+						ImGui::InputText("Triangualtion", (char*)selectedRow.at(7).c_str(), 64,
+							popupInputFlags);
 
 						ImGui::SameLine();
 						HelpMarker("Cross currency triangulation");
@@ -283,30 +325,62 @@ void QuantIOCurrency::DisplayContents() {
 						ImGui::Separator();
 						ImGui::Spacing();
 
-						if (ImGui::BeginTabBar("CurrencyTabBar")) {
+						if (ImGui::BeginTabBar("CurrencyTabBar", ImGuiTabBarFlags_None)) {
+							bool open = true;
 							if (ImGui::BeginTabItem("Rouding")) {
-								ptrdiff_t pos = std::find(rounding.begin(), rounding.end(), selectedRow.at(7))
+								ptrdiff_t pos = std::find(rounding.begin(), rounding.end(), selectedRow.at(8))
 									- rounding.begin();
-								int currentRoundingIndex = pos;
+
+								static int currentRoundingIndex = 0;
+								static std::string currentRoundingType = "0";
+								static std::string currentRoundingPrecision = "0";
+								static std::string currentRoundingDigits = "0";
+
+								if (openEditPopup || openOpenPopup) {
+									currentRoundingIndex = pos;
+									currentRoundingType = selectedRow.at(9).c_str();
+									currentRoundingPrecision = selectedRow.at(10);
+									currentRoundingDigits = selectedRow.at(11);
+								}
+
+
+
 								std::string currentRounding = rounding[currentRoundingIndex];
 								ImGui::Spacing();
 								ImGui::Indent(15.0f);
 								ImGui::PushItemWidth(rowHeight * 15.0f);
+
 								if (ImGui::BeginCombo("##Rounding", currentRounding.c_str())) {
 									for (int n = 0; n < rounding.size(); n++) {
-										const bool is_selected = (currentRoundingIndex == n);
-										if (ImGui::Selectable(rounding[n].c_str(), is_selected))
-											//currentRoundingIndex = n;
-											if (is_selected)
-												ImGui::SetItemDefaultFocus();
+										
+										const bool isSelected = (currentRoundingIndex == n);
+
+										if (ImGui::Selectable(rounding[n].c_str(), isSelected)) {
+											currentRoundingIndex = n;
+
+											boost::format roundIndexQuery = boost::format("SELECT LABEL, TYPE, PRECISION, DIGIT FROM ROUNDING WHERE LABEL = '%1%'") % rounding[currentRoundingIndex];
+											std::vector<std::string> roundIndexResult = 
+												QuantIO::dbConnection.getTableData2(
+												roundIndexQuery.str(), false, false)[0];
+
+											//currentRoundingIndex = pos;
+											currentRoundingType = roundIndexResult.at(1).c_str();
+											currentRoundingPrecision = roundIndexResult.at(2);
+											currentRoundingDigits = roundIndexResult.at(3);
+
+											//printf("%s\n", roundIndexQuery.str());
+										}
+										if (isSelected) {
+											ImGui::SetItemDefaultFocus();
+										}
 									}
 									ImGui::EndCombo();
 								}
 								ImGui::PopItemWidth();
 
-								ImGui::Text("Type: Closest");
-								ImGui::Text("Precision: 5");
-								ImGui::Text("Digit: 5");
+								ImGui::Text("Type: %s", getRoundingType(currentRoundingType).c_str());
+								ImGui::Text("Precision: %s", currentRoundingPrecision.c_str());
+								ImGui::Text("Digit: %s", currentRoundingDigits.c_str());
 
 								ImGui::Unindent(15.0f);
 
@@ -317,19 +391,35 @@ void QuantIOCurrency::DisplayContents() {
 								ImGui::Indent(15.0f);
 								ImGui::PushItemWidth(rowHeight * 15.0f);
 								ImGui::InputText("Format", (char*)selectedRow.at(6).c_str(), 64,
-									ImGuiInputTextFlags_ReadOnly);
+									popupInputFlags);
 								ImGui::PopItemWidth();
 								ImGui::SameLine();
 								HelpMarker("(1) value (2) code (3) symbol");
 
+								//Use try catch
 								boost::format fmt;
-								if (boost::contains(selectedRow.at(6), "3")) {
+								try {
+									if (boost::contains(selectedRow.at(6), "%3%")) {
+										fmt = boost::format(selectedRow.at(6)) % 12345.67891 %
+											selectedRow[0] % selectedRow[3];
+									}
+									else {
+										fmt = boost::format(selectedRow.at(6)) % 12345.67891 % selectedRow[0];
+									};
+								}
+								catch (int x) {
+									fmt = boost::format("%1%") % "Error";
+								}
+
+								
+								/*if (boost::contains(selectedRow.at(6), "%3%")) {
 									fmt = boost::format(selectedRow.at(6)) % 12345.67891 % 
 										selectedRow[0] % selectedRow[3];
 								}
 								else {
 									fmt = boost::format(selectedRow.at(6)) % 12345.67891 % selectedRow[0];
-								};
+								};*/
+
 								ImGui::Indent(15.0f);
 								
 								ImGui::TextDisabled(fmt.str().c_str());
@@ -371,6 +461,14 @@ void QuantIOCurrency::DisplayContents() {
 						if (ImGui::Button("Close")) {//ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape)
 							ImGui::CloseCurrentPopup();
 						}
+
+						if (popupInputFlags == ImGuiInputTextFlags_None) {
+							ImGui::SameLine(ImGui::CalcTextSize("Close").x + 30.0f);
+							if (ImGui::Button("Save")) {//ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape)
+								ImGui::CloseCurrentPopup();
+							}
+						}
+
 						//ImGui::SetItemDefaultFocus();
 						ImGui::EndPopup();
 					}

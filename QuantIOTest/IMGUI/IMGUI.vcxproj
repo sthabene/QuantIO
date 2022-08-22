@@ -98,7 +98,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);PROJECT_DIR=R"($(ProjectDir))"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_MBCS;%(PreprocessorDefinitions);PROJECT_DIR=R"($(ProjectDir))"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)vendor\utfcpp\source;$(SolutionDir)vendor\quantlib\;$(SolutionDir)vendor\boost\;$(ProjectDir)src\quant\;$(ProjectDir)src\connector\include\;$(ProjectDir)src\gui\include\;$(SolutionDir)vendor\sqlite\;$(SolutionDir)vendor\imgui\;$(SolutionDir)vendor\imgui\backends;$(SolutionDir)vendor\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -160,6 +160,7 @@
     <ClCompile Include="src\connector\sqlite.cpp" />
     <ClCompile Include="src\connector\stmt.cpp" />
     <ClCompile Include="src\gui\gui.cpp" />
+    <ClCompile Include="src\gui\guiaddons.cpp" />
     <ClCompile Include="src\gui\guiconfig.cpp" />
     <ClCompile Include="src\gui\guiexamples.cpp" />
     <ClCompile Include="src\gui\guilayoutpopups.cpp" />
@@ -176,6 +177,7 @@
     <ClCompile Include="..\..\vendor\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\..\vendor\imgui\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="..\..\vendor\imgui\backends\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="..\..\vendor\imgui\addons\imguidatechooser\imguidatechooser.cpp" />
     <ClCompile Include="src\quant\math\rounding\rounding.cpp" />
     <ClCompile Include="src\quant\tables\tables.cpp" />
   </ItemGroup>
@@ -189,7 +191,9 @@
     <ClInclude Include="..\..\vendor\imgui\backends\imgui_impl_glfw.h" />
     <ClInclude Include="..\..\vendor\imgui\backends\imgui_impl_opengl3.h" />
     <ClInclude Include="..\..\vendor\imgui\backends\imgui_impl_opengl3_loader.h" />
+    <ClInclude Include="..\..\vendor\imgui\addons\imguidatechooser\imguidatechooser.h" />
     <ClInclude Include="src\gui\include\gui.hpp" />
+    <ClInclude Include="src\gui\include\guiaddons.hpp" />
     <ClInclude Include="src\gui\include\guiexamples.hpp" />
     <ClInclude Include="src\gui\include\guilayoutpopups.hpp" />
     <ClInclude Include="src\quant\currencies\currencies.hpp" />

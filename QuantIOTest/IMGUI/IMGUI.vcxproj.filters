@@ -84,6 +84,12 @@
     <ClCompile Include="src\quant\math\rounding\rounding.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\vendor\imgui\addons\imguidatechooser\imguidatechooser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\gui\guiaddons.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\vendor\imgui\imconfig.h">
@@ -138,6 +144,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\quant\math\rounding\rounding.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\vendor\imgui\addons\imguidatechooser\imguidatechooser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\gui\include\guiaddons.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

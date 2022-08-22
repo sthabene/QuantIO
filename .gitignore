@@ -36,6 +36,8 @@ vendor/boost/
 vendor/glfw/
 vendor/imgui/
 vendor/quantlib/
+vendor/imgui_backup/
+vendor/imgui.widgets/
 
 # Build
 bin/
