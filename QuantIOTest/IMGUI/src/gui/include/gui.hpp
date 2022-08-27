@@ -12,6 +12,8 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
+#include "../../vendor/IconFontCppHeaders/IconsFontAwesome5.h"
+
 //Db connection
 #include "database.hpp"
 #include "sqlite.hpp"

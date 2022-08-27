@@ -26,6 +26,7 @@ static int refresh = 1;
 std::vector<std::string> selectedRow;
 std::vector<std::string> rounding;
 ImGuiInputTextFlags popupInputFlags = ImGuiInputTextFlags_None;
+ImGuiTabItemFlags roundingTabItemFlags = ImGuiTabItemFlags_None;
 static int frac = 0;
 
 static ImVec2 buttonSz(25.0f * 5.0f, 32.0f); //To change 
@@ -45,7 +46,6 @@ inline std::string getRoundingType(std::string roundingType) {
 void QuantIOCurrency::DisplayContents() {
 	ImGui::BeginChild("Currencies", ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysAutoResize);
 	{
-
 		static const float rowHeight = ImGui::GetTextLineHeight() + ImGui::GetStyle().CellPadding.y * 3.0f;
 
 		//Running the query
@@ -181,6 +181,7 @@ void QuantIOCurrency::DisplayContents() {
 						if (ImGui::MenuItem("Open", "Enter")) {
 							//Populate selected item
 							popupInputFlags = ImGuiInputTextFlags_ReadOnly;
+							roundingTabItemFlags = ImGuiTabItemFlags_None;
 							std::string roundQuery = "SELECT LABEL FROM ROUNDING";
 							rounding = QuantIO::dbConnection.getTableData2(roundQuery.c_str(), false, true)[0];
 							boost::format openQuery = boost::format("SELECT T1.CODE, T1.NAME, T1.NUM_CODE, T1.SYMBOL, T1.FRAC_SYMBOL, T1.FRAC_UNIT, T1.FORMAT, T1.TRIANGU, T2.LABEL, T2.TYPE, T2.PRECISION, T2.DIGIT FROM CURRENCY T1, ROUNDING T2 WHERE T2.ROUNDING_ID = T1.ROUNDING AND T1.CODE = '%1%'") % currentRow->at(0);
@@ -191,12 +192,17 @@ void QuantIOCurrency::DisplayContents() {
 
 						if (ImGui::MenuItem("Edit", "Ctrl + Enter")) {
 							popupInputFlags = ImGuiInputTextFlags_None;
+							roundingTabItemFlags = ImGuiTabItemFlags_None;
 							std::string roundQuery = "SELECT LABEL FROM ROUNDING";
 							rounding = QuantIO::dbConnection.getTableData2(roundQuery.c_str(), false, true)[0];
 							boost::format openQuery = boost::format("SELECT T1.CODE, T1.NAME, T1.NUM_CODE, T1.SYMBOL, T1.FRAC_SYMBOL, T1.FRAC_UNIT, T1.FORMAT, T1.TRIANGU, T2.LABEL, T2.TYPE, T2.PRECISION, T2.DIGIT FROM CURRENCY T1, ROUNDING T2 WHERE T2.ROUNDING_ID = T1.ROUNDING AND T1.CODE = '%1%'") % currentRow->at(0);
 							selectedRow = QuantIO::dbConnection.getTableData2(openQuery.str(), false, false)[0];
 
 							openEditPopup = true;
+						};
+						ImGui::Separator();
+						if (ImGui::MenuItem("Refresh", "F5")) {
+							refresh++;
 						};
 						ImGui::Separator();
 						if (ImGui::MenuItem("Insert", "Insert")) {
@@ -245,6 +251,13 @@ void QuantIOCurrency::DisplayContents() {
 						ImGui::OpenPopup(title.c_str());
 						//printf("%d\n", (int)openOpenPopup);
 						//openEditPopup = false;
+					}
+
+					if (openEditPopup || openOpenPopup) {
+						roundingTabItemFlags = ImGuiTabItemFlags_SetSelected;
+					}
+					else {
+						roundingTabItemFlags = ImGuiTabItemFlags_None;
 					}
 
 					bool unusedOpen = true;
@@ -327,7 +340,7 @@ void QuantIOCurrency::DisplayContents() {
 
 						if (ImGui::BeginTabBar("CurrencyTabBar", ImGuiTabBarFlags_None)) {
 							bool open = true;
-							if (ImGui::BeginTabItem("Rouding")) {
+							if (ImGui::BeginTabItem("Rouding", &open, roundingTabItemFlags)) {
 								ptrdiff_t pos = std::find(rounding.begin(), rounding.end(), selectedRow.at(8))
 									- rounding.begin();
 
@@ -342,8 +355,6 @@ void QuantIOCurrency::DisplayContents() {
 									currentRoundingPrecision = selectedRow.at(10);
 									currentRoundingDigits = selectedRow.at(11);
 								}
-
-
 
 								std::string currentRounding = rounding[currentRoundingIndex];
 								ImGui::Spacing();
@@ -391,7 +402,7 @@ void QuantIOCurrency::DisplayContents() {
 								ImGui::Indent(15.0f);
 								ImGui::PushItemWidth(rowHeight * 15.0f);
 								ImGui::InputText("Format", (char*)selectedRow.at(6).c_str(), 64,
-									popupInputFlags);
+									popupInputFlags | ImGuiInputTextFlags_ReadOnly);
 								ImGui::PopItemWidth();
 								ImGui::SameLine();
 								HelpMarker("(1) value (2) code (3) symbol");
@@ -411,7 +422,6 @@ void QuantIOCurrency::DisplayContents() {
 									fmt = boost::format("%1%") % "Error";
 								}
 
-								
 								/*if (boost::contains(selectedRow.at(6), "%3%")) {
 									fmt = boost::format(selectedRow.at(6)) % 12345.67891 % 
 										selectedRow[0] % selectedRow[3];
@@ -424,6 +434,10 @@ void QuantIOCurrency::DisplayContents() {
 								
 								ImGui::TextDisabled(fmt.str().c_str());
 								ImGui::Unindent(30.0f);
+
+
+
+
 								ImGui::EndTabItem();
 							}
 							if (ImGui::BeginTabItem("Minor Unit Codes")) {

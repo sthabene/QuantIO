@@ -84,6 +84,16 @@ int main(int, char**) {
     io.FontDefault = dejavuFont == NULL ? segoeuiFont1 : dejavuFont;
     //io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 16.0f);
 
+    //Icons
+    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
+    ImFontConfig icons_config; 
+    icons_config.MergeMode = true; 
+    icons_config.PixelSnapH = true;
+    io.Fonts->AddFontFromFileTTF("..\\..\\misc\\fonts\\fa-solid-900.ttf", 15.0f, 
+        &icons_config, icons_ranges);
+
+    //io.FontDefault = faFontIcon;
+
     //Set clear color
     ImVec4 clear_color = ImVec4(0.137f, 0.137f, 0.137f, 1.0f); //ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
