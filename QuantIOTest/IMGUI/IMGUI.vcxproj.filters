@@ -128,9 +128,6 @@
     <ClInclude Include="src\gui\include\guilayoutpopups.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\quant\currencies\currencies.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\gui\include\guitables.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -150,6 +147,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\gui\include\guiaddons.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\quant\quant.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

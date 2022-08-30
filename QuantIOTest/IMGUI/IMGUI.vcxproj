@@ -196,11 +196,11 @@
     <ClInclude Include="src\gui\include\guiaddons.hpp" />
     <ClInclude Include="src\gui\include\guiexamples.hpp" />
     <ClInclude Include="src\gui\include\guilayoutpopups.hpp" />
-    <ClInclude Include="src\quant\currencies\currencies.hpp" />
     <ClInclude Include="src\gui\include\guitables.hpp" />
     <ClInclude Include="src\gui\include\guitools.hpp" />
     <ClInclude Include="src\gui\include\guiwidgets.hpp" />
     <ClInclude Include="src\quant\math\rounding\rounding.hpp" />
+    <ClInclude Include="src\quant\quant.hpp" />
     <ClInclude Include="src\quant\tables\tables.hpp" />
   </ItemGroup>
   <ItemGroup>

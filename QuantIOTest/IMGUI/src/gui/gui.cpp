@@ -4,7 +4,7 @@
 #include "guitables.hpp"
 #include "guitools.hpp"
 #include "guiaddons.hpp"
-#include "currencies\currencies.hpp"
+#include "quant.hpp"
 #include "math\rounding\rounding.hpp"
 
 #include <algorithm>

@@ -251,7 +251,7 @@ namespace QuantIO {
     }
 
     std::vector<std::vector<std::string>> Connection::Stmt::getTableData(const std::string& sql) {
-        printf("%s\n", sql.c_str());
+        printf("%s;\n", sql.c_str());
         std::vector<std::vector<std::string>> tableVec;
 
         sqlite3_prepare_v2(db_, sql.c_str(), sql.length() + 1, &stmt_, NULL);

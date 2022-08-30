@@ -101,4 +101,15 @@ namespace QuantIO {
 		ImGuiTableFlags_ScrollY |
 		ImGuiTableFlags_NoHostExtendY;
 
+	///Filtering
+	struct NumericFilter {
+		static int Filter(ImGuiInputTextCallbackData* data) {
+			ImWchar c = data->EventChar;
+			if (!(c >= '0' && c <= '9')) {
+				return 1;
+			};
+			return 0;
+		}
+	};
+
 }

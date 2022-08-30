@@ -3,12 +3,10 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#include "currencies.hpp"
+#include "../quant.hpp"
 #include "boost/algorithm/string/join.hpp"
 #include "boost/algorithm/string.hpp"
 #include "boost/format.hpp"
-#include "boost/locale.hpp"
-#include "utf8.h"
 #include <algorithm>
 
 #ifndef NO_IMGUIDATECHOOSER
@@ -17,7 +15,7 @@
 
 #define IMGUI_LEFT_LABEL(func, label, ...) (ImGui::TextUnformatted(label), ImGui::SameLine(), func("##" label, __VA_ARGS__))
 
-static std::string query = "SELECT CODE, NAME, SYMBOL, FRAC_UNIT FROM CURRENCY ORDER BY CODE";
+static std::string query = "SELECT CODE, NAME FROM CURRENCY ORDER BY CODE";
 static std::string title = "Currency###";
 static std::vector<std::vector<std::string>> tableData;
 static int refresh = 1;
@@ -25,6 +23,9 @@ static int refresh = 1;
 //Open item
 std::vector<std::string> selectedRow;
 std::vector<std::string> rounding;
+std::vector<std::string> roundingTypes;
+static bool showFilter = false;
+static std::vector<std::string> selectedRouding;
 ImGuiInputTextFlags popupInputFlags = ImGuiInputTextFlags_None;
 ImGuiTabItemFlags roundingTabItemFlags = ImGuiTabItemFlags_None;
 static int frac = 0;
@@ -60,16 +61,18 @@ void QuantIOCurrency::DisplayContents() {
 
 		//Filtering text field
 		static ImGuiTextFilter filter;
-		filter.Draw("Filter", ImGui::GetFontSize() * 25);
-		ImGui::SameLine();
-		HelpMarker("Use , for OR, - for NOT, filtering includes hidden columns");
+		if (showFilter) {
+			filter.Draw("Filter", ImGui::GetFontSize() * 25);
+			ImGui::SameLine();
+			HelpMarker("Use , for OR, - for NOT, filtering includes hidden columns");
+		}
 
 		//Refresh button
-		ImGui::SameLine();
+		/*ImGui::SameLine();
 		ImGui::SetCursorPosX(ImGui::GetWindowSize().x - buttonSz.x);
 		if (ImGui::Button("Refresh", buttonSz)) {
 			refresh++;
-		}
+		}*/
 
 		//Filtered Data
 		int startCount = 0;
@@ -171,12 +174,14 @@ void QuantIOCurrency::DisplayContents() {
 					bool openDeletePopup = false;
 					bool openExitPopup = false;
 
+					if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+						openExitPopup = true;
+					}
+
 					//Context menu
 					if (ImGui::BeginPopupContextItem("ContextPopup")) {
 						selections.clear();
 						selections.push_back(currentRow->at(0));
-
-						
 
 						if (ImGui::MenuItem("Open", "Enter")) {
 							//Populate selected item
@@ -204,6 +209,7 @@ void QuantIOCurrency::DisplayContents() {
 						if (ImGui::MenuItem("Refresh", "F5")) {
 							refresh++;
 						};
+						ImGui::MenuItem("Filter", "Ctrl + F", &showFilter, true);
 						ImGui::Separator();
 						if (ImGui::MenuItem("Insert", "Insert")) {
 							openInsertPopup = true;
@@ -234,8 +240,16 @@ void QuantIOCurrency::DisplayContents() {
 						ImGui::Separator();
 						if (ImGui::MenuItem("Exit", "Esc")) {
 							openExitPopup = true;
+							
 						};
 						ImGui::EndPopup();
+					}
+
+					//Close Popup
+					if (openExitPopup) {
+						title = "Exit?";
+						ImGui::OpenPopup("Exit");
+						//openOpenPopup = false;
 					}
 
 					//Open Popup
@@ -254,18 +268,40 @@ void QuantIOCurrency::DisplayContents() {
 					}
 
 					if (openEditPopup || openOpenPopup) {
-						roundingTabItemFlags = ImGuiTabItemFlags_SetSelected;
+						roundingTabItemFlags = ImGuiTabItemFlags_SetSelected ;
 					}
 					else {
 						roundingTabItemFlags = ImGuiTabItemFlags_None;
 					}
 
-					bool unusedOpen = true;
+					ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, 
+						ImVec2(0.5f, 0.5f));
+					if (ImGui::BeginPopupModal("Exit", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+						ImGui::Text("Close and save changes?");
+						ImGui::Separator();
+
+						static bool askAgain = false;
+						ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+						//ImGui::Checkbox("Don't ask me next time", &askAgain);
+						ImGui::PopStyleVar();
+
+						if (ImGui::Button("OK", ImVec2(120, 0))) { 
+							ImGui::CloseCurrentPopup(); 
+							this->DoClose();
+						}
+						ImGui::SetItemDefaultFocus();
+						ImGui::SameLine();
+						if (ImGui::Button("Cancel", ImVec2(120, 0))) { 
+							ImGui::CloseCurrentPopup();
+						}
+						ImGui::EndPopup();
+					}
+
 					ImGui::SetNextWindowPos(QuantIO::popupLocation(), ImGuiCond_Appearing, ImVec2(0.0f, 0.0f));
 					ImGui::SetNextWindowSize(ImVec2(800, 700), ImGuiCond_FirstUseEver);
-					if (ImGui::BeginPopupModal(title.c_str(), &unusedOpen, ImGuiWindowFlags_NoResize |ImGuiWindowFlags_NoSavedSettings)) {
+					if (ImGui::BeginPopupModal(title.c_str(), NULL, ImGuiWindowFlags_NoResize |ImGuiWindowFlags_NoSavedSettings)) {
 						ImGui::Spacing();
-						ImGui::SetCursorPosX(400);
+						ImGui::SetCursorPosX(400 - ImGui::CalcTextSize("Details").x * 0.5f);
 						ImGui::TextDisabled("Details");
 						ImGui::Spacing();
 						
@@ -301,6 +337,7 @@ void QuantIOCurrency::DisplayContents() {
 						if (openEditPopup || openOpenPopup) {
 							itemCurrent = originalItem;
 						}
+
 						const char* fracPreview = fracSymbols[itemCurrent];
 
 						if (ImGui::BeginCombo("Fractions Per Unit", fracPreview,
@@ -340,7 +377,7 @@ void QuantIOCurrency::DisplayContents() {
 
 						if (ImGui::BeginTabBar("CurrencyTabBar", ImGuiTabBarFlags_None)) {
 							bool open = true;
-							if (ImGui::BeginTabItem("Rouding", &open, roundingTabItemFlags)) {
+							if (ImGui::BeginTabItem("Rouding", NULL, roundingTabItemFlags)) {
 								ptrdiff_t pos = std::find(rounding.begin(), rounding.end(), selectedRow.at(8))
 									- rounding.begin();
 
@@ -370,14 +407,13 @@ void QuantIOCurrency::DisplayContents() {
 											currentRoundingIndex = n;
 
 											boost::format roundIndexQuery = boost::format("SELECT LABEL, TYPE, PRECISION, DIGIT FROM ROUNDING WHERE LABEL = '%1%'") % rounding[currentRoundingIndex];
-											std::vector<std::string> roundIndexResult = 
-												QuantIO::dbConnection.getTableData2(
+											selectedRouding = QuantIO::dbConnection.getTableData2(
 												roundIndexQuery.str(), false, false)[0];
 
 											//currentRoundingIndex = pos;
-											currentRoundingType = roundIndexResult.at(1).c_str();
-											currentRoundingPrecision = roundIndexResult.at(2);
-											currentRoundingDigits = roundIndexResult.at(3);
+											currentRoundingType = selectedRouding.at(1).c_str();
+											currentRoundingPrecision = selectedRouding.at(2);
+											currentRoundingDigits = selectedRouding.at(3);
 
 											//printf("%s\n", roundIndexQuery.str());
 										}
@@ -389,14 +425,203 @@ void QuantIOCurrency::DisplayContents() {
 								}
 								ImGui::PopItemWidth();
 
+								if (popupInputFlags == ImGuiInputTextFlags_None) {
+									ImGui::SameLine(0.0f, 10.0f);
+									if (ImGui::Button("Edit rounding...")) {
+										ImGui::OpenPopup("Edit Rounding");
+									}
+
+									ImGui::SameLine(0.0f, 10.0f);
+									if (ImGui::Button("New rounding...")) {
+										ImGui::OpenPopup("New Rounding");
+									}
+								}
+
 								ImGui::Text("Type: %s", getRoundingType(currentRoundingType).c_str());
 								ImGui::Text("Precision: %s", currentRoundingPrecision.c_str());
 								ImGui::Text("Digit: %s", currentRoundingDigits.c_str());
 
 								ImGui::Unindent(15.0f);
 
+								ImGui::SetNextWindowPos(QuantIO::popupLocation(ImGui::GetWindowPos(), 2.0f), 
+									ImGuiCond_Appearing, ImVec2(0.0f, 0.0f));
+								ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_FirstUseEver);
+								if (ImGui::BeginPopupModal("Edit Rounding", NULL, 
+									ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings)) {
+
+									ImGui::Spacing();
+									ImGui::SetCursorPosX(300 - ImGui::CalcTextSize("Rouding").x * 0.5f);
+									ImGui::TextDisabled("Rouding");
+									ImGui::Spacing();
+
+									ImGui::Indent(60.0f);
+									ImGui::PushItemWidth(rowHeight * 15.0f);
+
+									//ImGui::PushStyleColor(ImGuiCol_Text, 
+										//ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
+
+									ImGui::InputText("Label", (char*)currentRounding.c_str(), 32,
+										ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_ReadOnly);
+
+
+									ImGui::InputText("Type", 
+										(char*)getRoundingType(currentRoundingType).c_str(), 
+										32, ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
+
+									//ImGui::PopStyleColor();
+									static ImVec4 frameBg_precision = ImGui::GetStyle().Colors[ImGuiCol_FrameBg];
+									ImGui::PushStyleColor(ImGuiCol_FrameBg, frameBg_precision);
+									ImGui::InputText("Precision",
+										(char*)currentRoundingPrecision.c_str(),
+										32, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CallbackCharFilter,
+										QuantIO::NumericFilter::Filter);
+									ImGui::PopStyleColor();
+
+									static ImVec4 frameBg_digit = ImGui::GetStyle().Colors[ImGuiCol_FrameBg];
+									ImGui::PushStyleColor(ImGuiCol_FrameBg, frameBg_digit);
+									ImGui::InputText("Digit",
+										(char*)currentRoundingDigits.c_str(),
+										32, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CallbackCharFilter,
+										QuantIO::NumericFilter::Filter);
+									ImGui::PopStyleColor();
+
+									ImGui::Unindent(60.0f);
+
+									ImGui::SetCursorPosY(400 - 1.5f * buttonSz.y);
+									ImGui::Separator();
+
+									if (ImGui::Button("Close")) {
+
+										frameBg_precision = ImGui::GetStyle().Colors[ImGuiCol_FrameBg];
+										frameBg_digit = ImGui::GetStyle().Colors[ImGuiCol_FrameBg];
+
+										boost::format roundIndexQuery = boost::format("SELECT LABEL, TYPE, PRECISION, DIGIT FROM ROUNDING WHERE LABEL = '%1%'") % currentRounding.c_str();
+										selectedRouding = QuantIO::dbConnection.getTableData2(
+											roundIndexQuery.str(), false, false)[0];
+
+										currentRoundingPrecision = selectedRouding.at(2);
+										currentRoundingDigits = selectedRouding.at(3);
+
+										ImGui::CloseCurrentPopup();
+									}
+									ImGui::SameLine(ImGui::CalcTextSize("Close").x + 30.0f);
+									if (ImGui::Button("Save")) {
+
+										bool digitEr = currentRoundingDigits.c_str()[0] == '\0';
+										bool precisionEr = currentRoundingPrecision.c_str()[0] == '\0';
+
+										if (digitEr || precisionEr) {
+
+											if (digitEr) {
+												frameBg_digit = ImVec4(0.93f, 0.10f, 0.01f, 0.3f);
+											}
+
+											if (precisionEr) {
+												frameBg_precision = ImVec4(0.93f, 0.10f, 0.01f, 0.3f);
+											}
+										}
+										else {
+											ImGui::CloseCurrentPopup();
+
+											boost::format roundUpdateQuery = boost::format("UPDATE ROUNDING SET PRECISION = '%1%', DIGIT = '%2%' WHERE LABEL = '%3%'") % 
+												currentRoundingPrecision.c_str() %
+												currentRoundingDigits.c_str() %
+												currentRounding.c_str();
+											QuantIO::dbConnection.updateData(roundUpdateQuery.str());
+
+											
+
+											//printf("(%s)\n", roundUpdateQuery.str().c_str());
+											frameBg_precision = ImGui::GetStyle().Colors[ImGuiCol_FrameBg];
+											frameBg_digit = ImGui::GetStyle().Colors[ImGuiCol_FrameBg];
+										}
+									}
+									ImGui::EndPopup();
+								}
+
+
+								ImGui::SetNextWindowPos(QuantIO::popupLocation(ImGui::GetWindowPos(), 2.0f),
+									ImGuiCond_Appearing, ImVec2(0.0f, 0.0f));
+								ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_FirstUseEver);
+								if (ImGui::BeginPopupModal("New Rounding", NULL,
+									ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings)) {
+
+
+									ImGui::Spacing();
+									ImGui::SetCursorPosX(300 - ImGui::CalcTextSize("Rouding").x * 0.5f);
+									ImGui::TextDisabled("Rouding");
+									ImGui::Spacing();
+
+									ImGui::Indent(60.0f);
+									ImGui::PushItemWidth(rowHeight * 15.0f);
+
+									static char label[32];
+									static int type = 0;
+									static char precision[32] = "0";
+									static char digit[32] = "0";
+
+									ImGui::InputText("Label", label, 32);
+
+									
+									ImGui::Combo("Type", &type,
+										"None\0Up\0Down\0Closest\0Ceiling\0Floor\0\0");
+
+									static ImVec4 frameBg_precision = ImGui::GetStyle().Colors[ImGuiCol_FrameBg];
+									ImGui::PushStyleColor(ImGuiCol_FrameBg, frameBg_precision);
+									ImGui::InputText("Precision", precision, 32, 
+										ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CallbackCharFilter,
+										QuantIO::NumericFilter::Filter);
+									ImGui::PopStyleColor();
+
+									static ImVec4 frameBg_digit = ImGui::GetStyle().Colors[ImGuiCol_FrameBg];
+									ImGui::PushStyleColor(ImGuiCol_FrameBg, frameBg_digit);
+									ImGui::InputText("Digit", digit, 32, ImGuiInputTextFlags_AutoSelectAll |
+										ImGuiInputTextFlags_CallbackCharFilter,
+										QuantIO::NumericFilter::Filter);
+									ImGui::PopStyleColor();
+
+
+									ImGui::Unindent(60.0f);
+
+									ImGui::SetCursorPosY(400 - 1.5f * buttonSz.y);
+									ImGui::Separator();
+
+									if (ImGui::Button("Close")) {
+										sprintf(label, "");
+										type = 0;
+										sprintf(precision, "0");
+										sprintf(digit, "0");
+										ImGui::CloseCurrentPopup();
+									}
+
+									ImGui::SameLine(ImGui::CalcTextSize("Close").x + 30.0f);
+									if (ImGui::Button("Save")) {
+
+										if (label[0] != '\0' && precision[0] != '\0' && digit[0] != '\0') {
+											boost::format roundInsertQuery = boost::format("INSERT INTO ROUNDING (LABEL, TYPE, PRECISION, DIGIT) VALUES ('%1%', %2%, %3%, %4%)") %
+												label %
+												type %
+												precision %
+												digit;
+										QuantIO::dbConnection.updateData(roundInsertQuery.str());
+										rounding = QuantIO::dbConnection.getTableData2(
+											"SELECT LABEL FROM ROUNDING", false, true)[0];
+										}
+
+										sprintf(label, "");
+										type = 0;
+										sprintf(precision, "0");
+										sprintf(digit, "0");										
+
+										ImGui::CloseCurrentPopup();
+									}
+
+									ImGui::EndPopup();
+								}
+
 								ImGui::EndTabItem();
 							}
+
 							if (ImGui::BeginTabItem("Format")) {
 								ImGui::Spacing();
 								ImGui::Indent(15.0f);
@@ -409,7 +634,7 @@ void QuantIOCurrency::DisplayContents() {
 
 								//Use try catch
 								boost::format fmt;
-								try {
+								//try {
 									if (boost::contains(selectedRow.at(6), "%3%")) {
 										fmt = boost::format(selectedRow.at(6)) % 12345.67891 %
 											selectedRow[0] % selectedRow[3];
@@ -417,33 +642,23 @@ void QuantIOCurrency::DisplayContents() {
 									else {
 										fmt = boost::format(selectedRow.at(6)) % 12345.67891 % selectedRow[0];
 									};
-								}
-								catch (int x) {
+								//}
+								/*catch (int x) {
 									fmt = boost::format("%1%") % "Error";
-								}
-
-								/*if (boost::contains(selectedRow.at(6), "%3%")) {
-									fmt = boost::format(selectedRow.at(6)) % 12345.67891 % 
-										selectedRow[0] % selectedRow[3];
-								}
-								else {
-									fmt = boost::format(selectedRow.at(6)) % 12345.67891 % selectedRow[0];
-								};*/
+								}*/
 
 								ImGui::Indent(15.0f);
 								
 								ImGui::TextDisabled(fmt.str().c_str());
 								ImGui::Unindent(30.0f);
 
-
-
-
 								ImGui::EndTabItem();
 							}
 							if (ImGui::BeginTabItem("Minor Unit Codes")) {
 								ImGui::Spacing();
 								ImGui::Indent(15.0f);
-								ImGui::Text("Minor unit codes, e.g. GBp, GBX for GBP");
+								ImGui::TextDisabled("Minor unit codes, e.g. GBp, GBX for GBP");
+								ImGui::TextDisabled("Currently not supported");
 								ImGui::Unindent(15.0f);
 								ImGui::EndTabItem();
 							}
@@ -451,9 +666,7 @@ void QuantIOCurrency::DisplayContents() {
 						}
 
 						//Close button
-						ImVec2 cursorPos = ImGui::GetCursorPos();
-						cursorPos.y = 700 - 1.5f * buttonSz.y;
-						ImGui::SetCursorPos(cursorPos);
+						ImGui::SetCursorPosY(700 - 1.5f * buttonSz.y);
 
 						ImGui::Separator();
 						//if (ImGui::Button("Add another modal.."))
@@ -461,16 +674,7 @@ void QuantIOCurrency::DisplayContents() {
 						//ImGui::SetNextWindowPos(QuantIO::popupLocation(ImGui::GetWindowPos(), 1.0f),
 						//	ImGuiCond_Appearing, ImVec2(0.0f, 0.0f));
 
-						//if (ImGui::BeginPopupModal("Stacked 2", &unusedOpen))
-						//{
-						//	ImGui::Text("Hello from Stacked The Second!");
-						//	if (ImGui::Button("Close")) {
-						//		ImGui::CloseCurrentPopup();
-						//		//openCurrenciesPopup = false;
-
-						//	}
-						//	ImGui::EndPopup();
-						//}
+						
 						//ImGui::SameLine();
 						if (ImGui::Button("Close")) {//ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Escape)
 							ImGui::CloseCurrentPopup();

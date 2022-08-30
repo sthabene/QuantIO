@@ -21,7 +21,7 @@ void AddonsDatePicker::DisplayContents() {
 		static tm myDate = {};       // IMPORTANT: must be static! (plenty of compiler warnings here if we write: static tm myDate={0}; Is there any difference?)
 		ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x * 0.5f);
 		ImGui::PushItemWidth(35.0f * 5.0f);
-		if (ImGui::DateChooser("Date Chooser##MyDateChooser", myDate, "%a, %d %b %Y")) {
+		if (ImGui::DateChooser("Date Chooser##MyDateChooser", myDate, "%a, %d %b %Y", false, NULL, ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
 			// A new date has been chosen
 			//fprintf(stderr,"A new date has been chosen exacty now: \"%.2d-%.2d-%.4d\"\n",myDate.tm_mday,myDate.tm_mon+1,myDate.tm_year+1900);
 		}
@@ -1116,8 +1116,6 @@ void AddonsIcons::DisplayContents() {
                 if (ImGui::BeginPopupContextItem()) {
                     selections.clear();
                     selections.push_back(currentItem);
-                    printf("(%s)\n", selections[0] - 20);
-
 
                     char buf[32];
                     sprintf(buf, selections[0]);

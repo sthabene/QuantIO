@@ -72,6 +72,8 @@ namespace QuantIO {
         std::vector<std::vector<std::string>> getTableData2(const std::string& sql, bool header = true,
             bool transpose = false);
 
+        void updateData(const std::string& sql);
+
     private:
         /// sqlite C API's DB connection obj
         sqlite3 * db_ = nullptr;

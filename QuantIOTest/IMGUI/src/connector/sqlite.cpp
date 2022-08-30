@@ -108,11 +108,11 @@ namespace QuantIO {
         return stmt_;
     }
 
-    std::vector<std::vector<std::string>> Connection::getTableData2(const std::string& sql, bool header, 
+    std::vector<std::vector<std::string>> Connection::getTableData2(const std::string& sql, bool header,
         bool transpose) {
         //Prepared statement
         Stmt statement(sql, *this);
-        printf("%s\n", sql.c_str());
+        printf("%s;\n", sql.c_str());
 
         //Stores the table return data
         const std::size_t columns = statement.get_col_count();
@@ -151,5 +151,17 @@ namespace QuantIO {
             tableVec = tresult;
         }
         return tableVec;
-    }
+    };
+
+
+    void Connection::updateData(const std::string& sql) {
+        //Prepared statement
+        Stmt statement(sql, *this);
+        printf("%s;\n", sql.c_str());
+        statement.step();
+        
+        //this->commit();
+        statement.reset();
+    };
+
 };

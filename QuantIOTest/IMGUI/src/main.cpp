@@ -61,7 +61,8 @@ int main(int, char**) {
     style.Alpha = 1.0f;
     style.WindowBorderSize = 0.0f;
     style.FramePadding = ImVec2(style.FramePadding.x * 2.0f, style.FramePadding.y * 2.0f);
-    style.FrameBorderSize = 1.0f;
+    style.FrameRounding = 6.0f;
+    style.FrameBorderSize = 0.0f;
     style.ItemSpacing = ImVec2(style.ItemSpacing.x * 2.0f, style.ItemSpacing.y * 2.0f);
     style.WindowPadding = ImVec2(style.WindowPadding.x, style.WindowPadding.y);
     style.WindowBorderSize = 0.0f;
