@@ -164,6 +164,7 @@
     <ClCompile Include="src\gui\guiconfig.cpp" />
     <ClCompile Include="src\gui\guiexamples.cpp" />
     <ClCompile Include="src\gui\guilayoutpopups.cpp" />
+    <ClCompile Include="src\quant\config\config.cpp" />
     <ClCompile Include="src\quant\currencies\currencies.cpp" />
     <ClCompile Include="src\gui\guistyle.cpp" />
     <ClCompile Include="src\gui\guitables.cpp" />
@@ -180,6 +181,7 @@
     <ClCompile Include="..\..\vendor\imgui\addons\imguidatechooser\imguidatechooser.cpp" />
     <ClCompile Include="src\quant\math\rounding\rounding.cpp" />
     <ClCompile Include="src\quant\tables\tables.cpp" />
+    <ClCompile Include="src\quant\time\calendars.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\connector\include\database.hpp" />

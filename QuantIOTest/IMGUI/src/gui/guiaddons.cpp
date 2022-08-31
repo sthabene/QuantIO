@@ -7,7 +7,6 @@
 //#include "addons/imguipanelmanager/imguipanelmanager.h"
 //#include "addons/imguivariouscontrols/imguivariouscontrols.h"
 //#include "addons/imguistyleserializer/imguistyleserializer.h"
-#include "addons/imguidatechooser/imguidatechooser.h"
 //#include "addons/imguicodeeditor/imguicodeeditor.h"
 //#include "addons/imguinodegrapheditor/imguinodegrapheditor.h"
 //#include "addons/imguidock/imguidock.h"

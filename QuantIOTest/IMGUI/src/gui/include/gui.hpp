@@ -13,11 +13,15 @@
 #include "imgui_internal.h"
 
 #include "../../vendor/IconFontCppHeaders/IconsFontAwesome5.h"
+#include "addons/imguidatechooser/imguidatechooser.h"
 
 //Db connection
 #include "database.hpp"
 #include "sqlite.hpp"
 #include "error.hpp"
+
+//QuantLib
+#include <ql/types.hpp>
 
 static void HelpMarker(const char* desc)
 {

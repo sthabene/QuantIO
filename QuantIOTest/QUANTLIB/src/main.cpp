@@ -1,5 +1,7 @@
 #include "QUANTLIB.h"
+#include <ql/settings.hpp>
 #include "boost/format.hpp"
+#include <limits>
 
 using namespace QuantLib;
 
@@ -18,10 +20,10 @@ int main() {
 
 	//std::cout << Date::maxDate() << "\n"; //December 31st, 2199
 
+	Date today = Date::todaysDate();
+	Settings::instance().evaluationDate() = today;
+	Settings::instance().anchorEvaluationDate(); //Sets evaluation date to today
 	
-;
-
-	std::cout << boost::format(zarCurrency.format()) % "100.8377664" % "124" % zarCurrency.code();
 
 	return 0;
 }

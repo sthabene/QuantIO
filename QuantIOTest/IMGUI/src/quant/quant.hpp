@@ -6,3 +6,16 @@ public:
 	QuantIOCurrency() : Window("Currencies", "QuantIO", false) { };
 	void DisplayContents() override;
 };
+
+
+class QuantIOConfig : public QuantIO::Window {
+public:
+	QuantIOConfig() : Window("Configuration", "QuantIO", false) { };
+	void DisplayContents() override;
+};
+
+class QuantIOCalendars : public QuantIO::Window {
+public:
+	QuantIOCalendars() : Window("Calendars", "Time", false) { };
+	void DisplayContents() override;
+};

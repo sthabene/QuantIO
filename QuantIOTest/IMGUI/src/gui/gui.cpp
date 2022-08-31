@@ -42,7 +42,8 @@ void QuantIO::AddWindows() {
     AddTables(QuantIO::ActiveWindows);
     AddToolsWindows(QuantIO::ActiveWindows);
     QuantIO::ActiveWindows.push_back(QuantIOCurrency());
-    QuantIO::ActiveWindows.push_back(QuantIORounding());
+    QuantIO::ActiveWindows.push_back(QuantIOConfig());
+    QuantIO::ActiveWindows.push_back(QuantIOCalendars());
     QuantIO::ActiveWindows.push_back(AddonsDatePicker());
     QuantIO::ActiveWindows.push_back(AddonsIcons());
 }
@@ -126,9 +127,20 @@ void WindowsMenu() {
             }
             selectedTab = quantio.Name; //Change to this tab
         }
+        if (quantio.Type == "Time") {
+            if (ImGui::BeginMenu("Time")) {
+                if (ImGui::MenuItem(quantio.Name, NULL, quantio.Open, true)) {
+                    if (!quantio.Open) {
+                        quantio.DoOpen();
+                    }
+                    selectedTab = quantio.Name; //Change to this tab
+                };
+                ImGui::EndMenu();
+            }
+        }
     }
     ImGui::Separator();
-    if (ImGui::BeginMenu("Configuration")) {
+    if (ImGui::BeginMenu("ImGUI")) {
         if (ImGui::MenuItem("Demo Window", NULL, &showDemoWindow)) {
             selectedTab = "Demo Window";
         };

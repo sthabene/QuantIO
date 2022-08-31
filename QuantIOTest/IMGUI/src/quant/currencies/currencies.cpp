@@ -13,7 +13,7 @@
 #include <time.h>   // very common plain c header file used only by DateChooser
 #endif //NO_IMGUIDATECHOOSER
 
-#define IMGUI_LEFT_LABEL(func, label, ...) (ImGui::TextUnformatted(label), ImGui::SameLine(), func("##" label, __VA_ARGS__))
+#define IMGUI_LEFT_LABEL(func, label, ...) ( ImGui::AlignTextToFramePadding(), ImGui::TextUnformatted(label), ImGui::SameLine(), func("##" label, __VA_ARGS__))
 
 static std::string query = "SELECT CODE, NAME FROM CURRENCY ORDER BY CODE";
 static std::string title = "Currency###";
@@ -174,9 +174,9 @@ void QuantIOCurrency::DisplayContents() {
 					bool openDeletePopup = false;
 					bool openExitPopup = false;
 
-					if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+					/*if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
 						openExitPopup = true;
-					}
+					}*/
 
 					//Context menu
 					if (ImGui::BeginPopupContextItem("ContextPopup")) {
@@ -308,19 +308,19 @@ void QuantIOCurrency::DisplayContents() {
 						ImGui::Indent(100.0f);
 						ImGui::PushItemWidth(rowHeight * 15.0f);
 						//Open modal details
-						ImGui::InputText("Code", (char*)selectedRow[0].c_str(), 64,
+						ImGui::InputText("Code", (char*)selectedRow[0].c_str(), 32,
 							ImGuiInputTextFlags_CharsUppercase | ImGuiDir_Left | popupInputFlags);
 						
-						ImGui::InputText("Name", (char*)selectedRow.at(1).c_str(), 64,
+						ImGui::InputText("Name", (char*)selectedRow.at(1).c_str(), 32,
 							popupInputFlags);
 
-						ImGui::InputText("Numeric code", (char*)selectedRow.at(2).c_str(), 64,
+						ImGui::InputText("Numeric code", (char*)selectedRow.at(2).c_str(), 32,
 							popupInputFlags | ImGuiInputTextFlags_CharsDecimal);
 
-						ImGui::InputText("Symbol", (char*)selectedRow.at(3).c_str(), 64,
+						ImGui::InputText("Symbol", (char*)selectedRow.at(3).c_str(), 32,
 							popupInputFlags);
 
-						ImGui::InputText("Fraction Symbol", (char*)selectedRow.at(4).c_str(), 64,
+						ImGui::InputText("Fraction Symbol", (char*)selectedRow.at(4).c_str(), 32,
 							popupInputFlags);
 
 						std::string fracSymbol = selectedRow.at(5);
@@ -363,7 +363,7 @@ void QuantIOCurrency::DisplayContents() {
 
 						
 						
-						ImGui::InputText("Triangualtion", (char*)selectedRow.at(7).c_str(), 64,
+						ImGui::InputText("Triangualtion", (char*)selectedRow.at(7).c_str(), 32,
 							popupInputFlags);
 
 						ImGui::SameLine();
@@ -626,7 +626,7 @@ void QuantIOCurrency::DisplayContents() {
 								ImGui::Spacing();
 								ImGui::Indent(15.0f);
 								ImGui::PushItemWidth(rowHeight * 15.0f);
-								ImGui::InputText("Format", (char*)selectedRow.at(6).c_str(), 64,
+								ImGui::InputText("Format", (char*)selectedRow.at(6).c_str(), 32,
 									popupInputFlags | ImGuiInputTextFlags_ReadOnly);
 								ImGui::PopItemWidth();
 								ImGui::SameLine();
