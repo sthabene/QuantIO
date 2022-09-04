@@ -28,7 +28,6 @@ static bool showFilter = false;
 static std::vector<std::string> selectedRouding;
 ImGuiInputTextFlags popupInputFlags = ImGuiInputTextFlags_None;
 ImGuiTabItemFlags roundingTabItemFlags = ImGuiTabItemFlags_None;
-static int frac = 0;
 
 static ImVec2 buttonSz(25.0f * 5.0f, 32.0f); //To change 
 

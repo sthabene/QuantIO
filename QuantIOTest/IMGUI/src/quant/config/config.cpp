@@ -214,6 +214,8 @@ void QuantIOConfig::DisplayContents() {
 
                     ImGui::Spacing();
                     ImGui::Spacing();
+
+
                     ImGui::Dummy(ImVec2(0.0f, 20.0f));
 
                     ImGui::Indent(30.0f);
