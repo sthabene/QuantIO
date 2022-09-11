@@ -20,4 +20,4 @@ public:
 	void DisplayContents() override;
 };
 
-void CalendarImplementation();
+void CalendarImplementation(std::string& weekend, std::string& calendarId);

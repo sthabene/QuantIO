@@ -1,4 +1,5 @@
 #include "../quant.hpp"
+#include <ql/time/date.hpp>
 #include <limits>
 
 #ifdef _MSC_VER
@@ -183,6 +184,18 @@ void QuantIOConfig::DisplayContents() {
                 ImGui::Text(ICON_FA_ARROW_CIRCLE_RIGHT " Probability (UNSIGNED LONG)");
                 ImGui::SliderScalar("Probability", ImGuiDataType_Double, &ProbabilityV, &ProbabilityMin, 
                     &ProbabilityMax, "%.10f");
+
+
+                ImGui::Spacing();
+                ImGui::Spacing();
+                //Date
+                static QuantLib::Date DateV(1, QuantLib::January, 2050);
+                const QuantLib::Date DateMin = QuantLib::Date::minDate();
+                const QuantLib::Date DateMax = QuantLib::Date::maxDate();
+                ImGui::Text(ICON_FA_ARROW_CIRCLE_RIGHT " Date");
+                ImGui::SameLine();
+                ImGui::Text("%02d/%02d/%04d", DateV.dayOfMonth(), DateV.month(), DateV.year());
+                ImGui::SliderScalar("Date", ImGuiDataType_U32, &DateV, &DateMin, &DateMax);
 
                 
 
