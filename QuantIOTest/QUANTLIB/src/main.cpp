@@ -76,75 +76,58 @@ int main() {
 	customCal.addHoliday(Date(16, Dec, 2022));
 	customCal.name();
 
-	std::vector<QuantLib::Date> holidays = customCal.holidayList(Date(1, Dec, 2022), Date(31, Dec, 2022));
+	//std::vector<QuantLib::Date> holidays = customCal.holidayList(Date(1, Dec, 2022), Date(31, Dec, 2022));
 
 	//Date(1, 12, 2022);????
 
-	SouthAfrica saCal;
+	Argentina saCal;
 
 	std::vector<QuantLib::Date> saHolidays = saCal.holidayList(Date(1, Jan, 2000), Date(31, Dec, 2100), false);
 	for (Date date : saHolidays) {
-		std::cout << date.dayOfMonth() << " " << date.month() << " " << date.year() << ",";
-		if (date.dayOfMonth() == 1 && date.month() == Jan) {
-			std::cout << " New Year's Day";
+		Weekday w = date.weekday();
+		Day d = date.dayOfMonth(), dd = date.dayOfYear();
+		Month m = date.month();
+		Year y = date.year();
+		Day em = CustomCal::CustomCalWesternImpl::easterMonday(y);
+		std::cout << date.year() << "-" << date.month() << "-" << date.dayOfMonth() << ",";
+		{
+			if (d == 1 && m == January) {
+				std::cout << " New Year's Day";
+			}
+			if (dd == em - 4) {
+				std::cout << " Holy Thursday";
+			}
+			if (dd == em - 3) {
+				std::cout << " Good Friday";
+			}
+			if (d == 1 && m == May) {
+				std::cout << " Labour Day";
+			}
+			if (d == 25 && m == May) {
+				std::cout << " May Revolution";
+			}
+			if (d >= 15 && d <= 21 && w == Monday && m == June) {
+				std::cout << " Death of General Manuel Belgrano";
+			}
+			if (d == 9 && m == July) {
+				std::cout << " Independence Day";
+			}
+			if (d >= 15 && d <= 21 && w == Monday && m == August) {
+				std::cout << " Death of General José de San Martín";
+			}
+			if ((d == 10 || d == 11 || d == 12 || d == 15 || d == 16) && w == Monday && m == October) {
+				std::cout << " Columbus Day";
+			}
+			if (d == 8 && m == December) {
+				std::cout << " Immaculate Conception";
+			}
+			if (d == 24 && m == December) {
+				std::cout << " Christmas Eve";
+			}
+			if ((d == 31 || (d == 30 && w == Friday)) && m == December) {
+				std::cout << " New Year's Eve";
+			}
 		}
-		if (date.dayOfMonth() == 2 && date.month() == Jan && date.weekday() == Mon) {
-			std::cout << " New Year's Day Observed";
-		};
-		if (date.dayOfMonth() == 21 && date.month() == Mar) {
-			std::cout << " Human Rights Day";
-		};
-		if (date.dayOfMonth() == 22 && date.month() == Mar && date.weekday() == Mon) {
-			std::cout << " Human Rights Day Observed";
-		};
-		if (date.dayOfMonth() == 27 && date.month() == Apr) {
-			std::cout << " Freedom Day";
-		};
-		if (date.dayOfMonth() == 28 && date.month() == May && date.weekday() == Mon) {
-			std::cout << " Freedom Day Observed";
-		};
-		if (date.dayOfMonth() == 1 && date.month() == May) {
-			std::cout << " Workers Day";
-		};
-		if (date.dayOfMonth() == 2 && date.month() == May && date.weekday() == Mon) {
-			std::cout << " Workers Day Observed";
-		};
-		if (date.dayOfMonth() == 16 && date.month() == Jun) {
-			std::cout << " Youth Day";
-		};
-		if (date.dayOfMonth() == 17 && date.month() == Jun && date.weekday() == Mon) {
-			std::cout << " Youth Day Observed";
-		};
-		if (date.dayOfMonth() == 9 && date.month() == Aug) {
-			std::cout << " National Women's Day";
-		};
-		if (date.dayOfMonth() == 10 && date.month() == Aug && date.weekday() == Mon) {
-			std::cout << " National Women's Day Observed";
-		};
-		if (date.dayOfMonth() == 24 && date.month() == Sep) {
-			std::cout << " Heritage Day";
-		};
-		if (date.dayOfMonth() == 25 && date.month() == Sep && date.weekday() == Mon) {
-			std::cout << " Heritage Day Observed";
-		};
-		if (date.dayOfMonth() == 16 && date.month() == Dec) {
-			std::cout << " Day of Reconciliation";
-		};
-		if (date.dayOfMonth() == 17 && date.month() == Dec && date.weekday() == Mon) {
-			std::cout << " Day of Reconciliation Observed";
-		};
-		if (date.dayOfMonth() == 25 && date.month() == Dec) {
-			std::cout << " Christmas Day";
-		};
-		if (date.dayOfMonth() == 26 && date.month() == Dec && date.weekday() == Mon) {
-			std::cout << " Christmas Day Observed";
-		};
-		if (date.dayOfMonth() == 26 && date.month() == Dec) {
-			std::cout << " Day of Goodwill";
-		};
-		if (date.dayOfMonth() == 27 && date.month() == Dec && date.weekday() == Mon) {
-			std::cout << " Day of Goodwill Observed";
-		};
 		std::cout << "\n";
 	}
 

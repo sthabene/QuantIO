@@ -189,8 +189,8 @@ void QuantIOConfig::DisplayContents() {
                 ImGui::Spacing();
                 ImGui::Spacing();
                 //Date
-                static QuantLib::Date DateV(1, QuantLib::January, 2050);
-                const QuantLib::Date DateMin = QuantLib::Date::minDate();
+                static QuantLib::Date DateV(1, QuantLib::January, 2084);
+                const QuantLib::Date DateMin(1, QuantLib::January, 1970);
                 const QuantLib::Date DateMax = QuantLib::Date::maxDate();
                 ImGui::Text(ICON_FA_ARROW_CIRCLE_RIGHT " Date");
                 ImGui::SameLine();
