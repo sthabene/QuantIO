@@ -219,7 +219,7 @@ void QuantIOConfig::DisplayContents() {
                     ImGui::Text("Evaluation Date: ");
                     ImGui::SameLine(0.0f, 10.0f);
                     ImGui::PushItemWidth(35.0f * 5.0f);
-                    if (ImGui::DateChooser("##EvaluationDate", evaluationDate, "%a, %d %b %Y", false, NULL, ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+                    if (ImGui::DateChooser("##EvaluationDate", evaluationDate, "%Y-%m-%d", false, NULL, ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
                         
                     }
                     ImGui::SameLine();

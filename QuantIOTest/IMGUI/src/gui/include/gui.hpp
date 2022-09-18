@@ -9,6 +9,7 @@
 #include <math.h>           // sqrtf, powf, cosf, sinf, floorf, ceilf
 #include <stdio.h>          // vsnprintf, sscanf, printf
 #include <stdlib.h>         // NULL, malloc, free, atoi
+#include <time.h>
 #include "imgui.h"
 #include "imgui_internal.h"
 
@@ -105,11 +106,36 @@ namespace QuantIO {
 		ImGuiTableFlags_ScrollY |
 		ImGuiTableFlags_NoHostExtendY;
 
+	static tm CreateDate(int day, int month, int year) {
+		struct tm tm = { 0 };
+		tm.tm_isdst = -1;
+		tm.tm_mday = day;
+		tm.tm_mon = month - 1;
+		tm.tm_year = year - 1900;
+		return tm;
+	};
+	static tm CreateDateNow() {
+		time_t now = time(NULL);
+		tm today = *localtime(&now);
+		today.tm_isdst = -1;
+		//today.tm_year += 1900;
+		return today;
+	};
+
 	///Filtering
 	struct NumericFilter {
 		static int Filter(ImGuiInputTextCallbackData* data) {
 			ImWchar c = data->EventChar;
 			if (!(c >= '0' && c <= '9')) {
+				return 1;
+			};
+			return 0;
+		}
+	};
+	struct DateFilter {
+		static int Filter(ImGuiInputTextCallbackData* data) {
+			ImWchar c = data->EventChar;
+			if (!(c >= '0' && c <= '9' || strchr("-", (char)c))) {
 				return 1;
 			};
 			return 0;

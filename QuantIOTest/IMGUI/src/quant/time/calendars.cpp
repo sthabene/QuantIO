@@ -7,8 +7,9 @@
 
 #include "boost/algorithm/string.hpp"
 #include "boost/format.hpp"
+#include "boost/regex.hpp"
 #include "ql/time/calendar.hpp"
-#include <time.h>
+
 
 static std::string query = "SELECT CALENDAR_ID, CALENDAR_LABEL, REGION, MARKET FROM CALENDAR ORDER BY REGION, CALENDAR_LABEL";
 static std::string title = "Calendar###";
@@ -16,6 +17,7 @@ static std::vector<std::vector<std::string>> tableData;
 static int refresh = 1;
 static int dateInit = 1;
 static int holidayInit = 1;
+static int holidayListInit = 1;
 static bool showFilter = false;
 
 //Open item
@@ -162,6 +164,7 @@ void QuantIOCalendars::DisplayContents() {
 							//selectedRow = *currentRow;
 							dateInit = 1;
 							holidaysInMonthInit = 1;
+							holidayListInit = 1;
 							holidaysToShow = 3;
 							openOpenPopup = true;
 						};
@@ -353,10 +356,29 @@ void QuantIOCalendars::DisplayContents() {
 								ImGui::EndTabItem();
 							}*/
 							if (ImGui::BeginTabItem("Adhoc Holidays", NULL)) {
-
+								ImGui::Spacing();
+								CalendarAdhocHolidays();
+								ImGui::Spacing();
 								ImGui::EndTabItem();
 							}
 							if (ImGui::BeginTabItem("Find Business Days", NULL)) {
+								ImGui::Spacing();
+								
+								ImGui::Indent(40.0f);
+
+								static tm Date1 = QuantIO::CreateDateNow();
+								static tm Date2 = QuantIO::CreateDateNow();
+								
+								ImGui::PushItemWidth(35.0f * 4.0f);
+								if (ImGui::DateChooser2("First Date", Date1, "%Y-%m-%d", false, NULL, 
+									ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+								}
+								if (ImGui::DateChooser("Second Date", Date2, "%Y-%m-%d", false, NULL,
+									ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+								}
+
+								ImGui::Unindent(40.0f);
+								ImGui::Spacing();
 
 								ImGui::EndTabItem();
 							}
@@ -400,15 +422,6 @@ static void RecalculateDate(tm& date) {
 	date = *localtime(&tmp); //Convert time_t to tm as local time
 };
 
-tm CreateDate(int day, int month, int year) {
-	struct tm tm = { 0 };
-	tm.tm_isdst = -1;
-	tm.tm_mday = day;
-	tm.tm_mon = month - 1;
-	tm.tm_year = year - 1900;
-	return tm;
-};
-
 void FindPublicHolidays(tm& currentDate, std::vector<std::vector<std::string>>& holidayList) {
 	std::vector<std::vector<std::string>> holidaysInMonth;
 	int numOfHolidays = holidayList.size();
@@ -417,7 +430,7 @@ void FindPublicHolidays(tm& currentDate, std::vector<std::vector<std::string>>& 
 	}
 }
 
-
+static tm dateOut;
 
 void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 
@@ -435,8 +448,12 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 
 			static time_t now = time(NULL);
 			static tm currentDate = *localtime(&now);
-			static tm dateOut = *localtime(&now);
 			static tm today = *localtime(&now);
+
+			static char currentDateText[10] = { '\0' };// = "2022-12-01";
+			static char oldDateText[10] = { '\0' };
+			std::string storeDateInput;
+			
 
 			//Running the query
 			if (dateInit & 1) {
@@ -463,6 +480,8 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 				}
 				/*boost::format holQuery = boost::format("SELECT DATE, HOLIDAY_DESC FROM HOLIDAYS WHERE CALENDAR = %1% AND DATE BETWEEN DATETIME('NOW', '-5 YEAR') AND DATETIME('NOW', '10 YEAR')") % calendarId;*/
 				holidays = QuantIO::dbConnection.getTableData2(holQuery.str(), false);
+				sprintf(currentDateText, "%04d-%02d-%02d", dateOut.tm_year + 1900, dateOut.tm_mon + 1, dateOut.tm_mday);
+				sprintf(oldDateText, currentDateText);
 				dateInit++;
 			}
 
@@ -551,8 +570,6 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 				}
 			}
 
-
-
 			static char curDayStr[3] = "";
 
 			const std::string weekendDay1 = weekend.substr(0, 1);
@@ -595,10 +612,13 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 						
 						bool todayDay = (currentDate.tm_year == today.tm_year && currentDate.tm_mon == today.tm_mon 
 							&& cday + 1 == today.tm_mday);
+						bool selectedDay = (cday + 1 == dateOut.tm_mday && currentDate.tm_year == dateOut.tm_year && 
+							currentDate.tm_mon == dateOut.tm_mon);
 
 						if (dw == weekendDays[1] || dw == weekendDays[0]) {
 							ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.667f, 0.167f, 0.167f, 1.0f));
 						}
+						
 						if (todayDay) {
 							ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.69f, 0.313f, 1.0f));
 						}
@@ -610,6 +630,9 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 								ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.99f, 0.167f, 0.167f, 1.0f));
 							}
 						};
+						if (selectedDay) {
+							ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.69f, 0.313f, 1.0f));
+						}
 
 						if (ImGui::SmallButton(curDayStr)) {
 							ImGui::SetItemDefaultFocus();
@@ -617,11 +640,17 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 							dateOut.tm_year = currentDate.tm_year;
 							dateOut.tm_mon = currentDate.tm_mon;
 							RecalculateDate(dateOut);
+							sprintf(currentDateText, "%04d-%02d-%02d", dateOut.tm_year + 1900, dateOut.tm_mon + 1,
+								dateOut.tm_mday);
+							sprintf(oldDateText, currentDateText);
 						}
 						if (dw == weekendDays[1] || dw == weekendDays[0]) {
 							ImGui::PopStyleColor();
 						}
 						if (todayDay) {
+							ImGui::PopStyleColor();
+						}
+						if (selectedDay) {
 							ImGui::PopStyleColor();
 						}
 						if (todayDay && ImGui::IsItemHovered()) {
@@ -651,44 +680,104 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 			ImGui::PopStyleColor();
 			ImGui::PopStyleColor();
 
-			if (dateInit & 1) {
+			/*if (dateInit & 1) {
 				currentDate = *localtime(&now);
 				RecalculateDate(currentDate);
 				dateInit++;
-			}
+			}*/
 
 			ImGui::Separator();
-			char currentDateText[32];
-			char inputDateText[32];
-
-			std::string storeDateInput;
-
-			strftime(currentDateText, 32, "%d %m %Y", &dateOut);
-
-			ImGui::PushItemWidth(35.0f * 5.0f);
-			ImGui::InputText("##customDate", currentDateText, 128, ImGuiInputTextFlags_AutoSelectAll);
 			
-			sprintf(inputDateText, currentDateText);
+			//strftime(currentDateText, 16, "%d %m %Y", &dateOut);
+			//ImGui::SetCursorPosX(17.5f * 3.5f + 30.0f);
+			ImGui::PushItemWidth(35.0f * 3.5f);
+			ImGui::InputText("##customDate", currentDateText, 11, ImGuiInputTextFlags_EnterReturnsTrue | 
+				ImGuiInputTextFlags_CallbackCharFilter, QuantIO::DateFilter::Filter);
+			
 			ImGui::SameLine();
 
-			storeDateInput = currentDateText;
-
-			static std::string year = storeDateInput.substr(6, 9);
-			static std::string mon = storeDateInput.substr(3, 4);
-			static std::string day = storeDateInput.substr(0, 1);
-			//printf("(%s)\n", year.c_str());
 
 			if (ImGui::SmallButton("Go")) {
-				printf("(%s)\n", storeDateInput.c_str());
+				//printf("(%s)\n", storeDateInput.c_str());
+
+				storeDateInput = currentDateText;
+
+				const boost::regex e1("\\b^\\d{4}[-](0[1-9]|1[012])[-](0[1-9]|[12][0-9]|3[01])$\\b"); //2022-02-12
+				const boost::regex e2("\\b^\\d{4}[-]([1-9]|1[012])[-]([1-9]|[12][0-9]|3[01])$\\b"); //2022-2-1
+				const boost::regex e3("\\b^\\d{4}[-](0[1-9]|1[012])[-]([1-9]|[12][0-9]|3[01])$\\b"); //2022-02-1
+				const boost::regex e4("\\b^\\d{4}[-]([1-9]|1[012])[-](0[1-9]|[12][0-9]|3[01])$\\b"); //2022-2-01
+
+				if (boost::regex_match(storeDateInput, e1, boost::regex_constants::match_all)) {
+					std::string year;
+					std::string mon;
+					std::string day;
+
+					//Creating the date 2012-12-12
+					{
+						year = storeDateInput.substr(0, 4);
+						mon = storeDateInput.substr(5, 2);
+						day = storeDateInput.substr(8, 2);
+					}
+
+					mon.erase(0, mon.find_first_not_of('0'));
+					day.erase(0, day.find_first_not_of('0'));
+
+					dateOut = QuantIO::CreateDate(std::stoi(day), std::stoi(mon), std::stoi(year));
+					RecalculateDate(dateOut);
+
+					currentDate.tm_mday = 1;
+					currentDate.tm_year = dateOut.tm_year;
+					currentDate.tm_mon = dateOut.tm_mon;
+					RecalculateDate(currentDate);
+
+					holidaysInMonthInit++; //To show or refresh holidays
+
+					sprintf(currentDateText, "%04d-%02d-%02d", dateOut.tm_year + 1900, dateOut.tm_mon + 1, dateOut.tm_mday);
+					sprintf(oldDateText, currentDateText);
+
+				}
+				else {
+					sprintf(currentDateText, oldDateText);
+				}
+
+				/*
+
+				int outLen = storeDateInput.length();
+
+				std::string year;
+				std::string mon;
+				std::string day;
+
+				//Creating the date 2012-12-12
+				{
+					year = storeDateInput.substr(0, 4);
+					mon = storeDateInput.substr(5, 2);
+					day = storeDateInput.substr(8, 2);
+				}
 
 				mon.erase(0, mon.find_first_not_of('0'));
 				day.erase(0, day.find_first_not_of('0'));
 				
-				dateOut = CreateDate(std::stoi(day), std::stoi(mon), std::stoi(year));
+				currentDate = QuantIO::CreateDate(1, std::stoi(mon), std::stoi(year));
+				RecalculateDate(currentDate);
+
+				holidaysInMonthInit++; //To show or refresh holidays
+
+				dateOut = QuantIO::CreateDate(std::stoi(day), std::stoi(mon), std::stoi(year));
+				RecalculateDate(dateOut);
+
+				*/
+
+				//currentDate.tm_mday = 1;
+				//RecalculateDate(currentDate);
+
 				//dateOut.tm_year = inputDateText.substr(0, 1)
 				
 				//sprintf(inputDateText, currentDateText);
 
+				//printf("%s\n", year.c_str());
+				//printf("%s\n", mon.c_str());
+				//printf("%s\n", day.c_str());
 			}
 
 		}
@@ -719,6 +808,12 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 		filter.Draw("Filter", ImGui::GetFontSize() * 18);
 		ImGui::SameLine();
 		HelpMarker("Use , for OR, - for NOT");
+
+
+		if (holidayListInit & 1) {
+			filter.Clear();
+			holidayListInit++;
+		}
 
 		static int iholidays = holidays.size();
 		std::vector<std::vector<std::string>> filteredholidays;
@@ -765,6 +860,43 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 			clipper.End();
 			ImGui::EndTable();
 		}			
+	}
+	ImGui::EndChild();
+}
+
+void CalendarAdhocHolidays() {
+	ImGui::BeginChild("##AdhocHolidays", ImVec2(0, 0), false, ImGuiWindowFlags_NoBackground);
+	{
+		if (ImGui::BeginTable("CalendarHolidays", 2, ImGuiTableFlags_ScrollY | ImGuiTableFlags_ScrollX |
+			ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV,
+			ImVec2(0.0f, 0.0f), 0.0f)) {
+			ImGui::TableSetupScrollFreeze(0, 1);
+			ImGui::TableSetupColumn("DATE", ImGuiTableColumnFlags_NoHide);
+			ImGui::TableSetupColumn("HOLIDAY", ImGuiTableColumnFlags_NoHide);
+			ImGui::TableHeadersRow();
+
+			/*static ImGuiListClipper clipper;
+			clipper.Begin(filteredholidays.size());
+
+			while (clipper.Step()) {
+				for (std::size_t i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
+					ImGui::PushID(i + 101);
+
+					ImGui::TableNextRow();
+
+					ImGui::TableSetColumnIndex(0);
+					ImGui::Text(filteredholidays[i][0].c_str());
+
+					ImGui::TableSetColumnIndex(1);
+					ImGui::Text(filteredholidays[i][1].c_str());
+
+					ImGui::PopID();
+				}
+			}
+
+			clipper.End();*/
+			ImGui::EndTable();
+		}
 	}
 	ImGui::EndChild();
 }
