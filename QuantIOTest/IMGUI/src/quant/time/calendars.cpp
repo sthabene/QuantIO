@@ -418,7 +418,14 @@ void QuantIOCalendars::DisplayContents() {
 
 static void RecalculateDate(tm& date) {
 	date.tm_isdst = -1;   //Removes daylight saving time
-	time_t tmp = mktime(&date); //Convert tm structure to time_t, reverse of localtime()
+	tm minDate = QuantIO::CreateDate(2, 1, 1970);
+	time_t tmp; //Convert tm structure to time_t, reverse of localtime()
+	if (mktime(&date) < mktime(&minDate)) {
+		tmp = mktime(&minDate);
+	}
+	else {
+		tmp = mktime(&date);
+	}
 	date = *localtime(&tmp); //Convert time_t to tm as local time
 };
 
@@ -688,41 +695,214 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 
 			ImGui::Separator();
 			
-			//strftime(currentDateText, 16, "%d %m %Y", &dateOut);
-			//ImGui::SetCursorPosX(17.5f * 3.5f + 30.0f);
-			ImGui::PushItemWidth(35.0f * 3.5f);
-			ImGui::InputText("##customDate", currentDateText, 11, ImGuiInputTextFlags_EnterReturnsTrue | 
-				ImGuiInputTextFlags_CallbackCharFilter, QuantIO::DateFilter::Filter);
-			
-			ImGui::SameLine();
-
-
-			if (ImGui::SmallButton("Go")) {
-				//printf("(%s)\n", storeDateInput.c_str());
+			if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && !ImGui::IsAnyItemActive() && !ImGui::IsMouseClicked(0)) {
+				ImGui::SetKeyboardFocusHere(0);
+			}
+			if (ImGui::InputText("##customDate", currentDateText, 11,
+				ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll |
+				ImGuiInputTextFlags_CallbackCharFilter, QuantIO::DateFilter::Filter)) {
 
 				storeDateInput = currentDateText;
 
-				const boost::regex e1("\\b^\\d{4}[-](0[1-9]|1[012])[-](0[1-9]|[12][0-9]|3[01])$\\b"); //2022-02-12
-				const boost::regex e2("\\b^\\d{4}[-]([1-9]|1[012])[-]([1-9]|[12][0-9]|3[01])$\\b"); //2022-2-1
-				const boost::regex e3("\\b^\\d{4}[-](0[1-9]|1[012])[-]([1-9]|[12][0-9]|3[01])$\\b"); //2022-02-1
-				const boost::regex e4("\\b^\\d{4}[-]([1-9]|1[012])[-](0[1-9]|[12][0-9]|3[01])$\\b"); //2022-2-01
+				const boost::regex 
+					e1("\\b^(1[9][7-9]\\d{1}|2[01]\\d{2})[\\/\\s-](0[1-9]|1[012])[\\/\\s-](0[1-9]|[12][0-9]|3[01])$\\b"); //2022-02-12
+				const boost::regex 
+					e2("\\b^(1[9][7-9]\\d{1}|2[01]\\d{2})[\\/\\s-]([1-9]|1[012])[\\/\\s-]([1-9]|[12][0-9]|3[01])$\\b"); //2022-2-1
+				const boost::regex 
+					e3("\\b^(1[9][7-9]\\d{1}|2[01]\\d{2})[\\/\\s-](0[1-9]|1[012])[\\/\\s-]([1-9]|[12][0-9]|3[01])$\\b"); //2022-02-1
+				const boost::regex 
+					e4("\\b^(1[9][7-9]\\d{1}|2[01]\\d{2})[\\/\\s-]([1-9]|1[012])[\\/\\s-](0[1-9]|[12][0-9]|3[01])$\\b"); //2022-2-01
+				const boost::regex 
+					e5("\\b^(1[9][7-9]\\d{1}|2[01]\\d{2})(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01])$\\b"); //20220201
 
-				if (boost::regex_match(storeDateInput, e1, boost::regex_constants::match_all)) {
+				const boost::regex y1("\\b^(\\d+[Yy])$\\b"); //10Y
+				const boost::regex y2("^-\\d+[yY]$"); //-10Y
+				const boost::regex m1("\\b^(\\d+[mM])$\\b"); //10m
+				const boost::regex m2("^-\\d+[mM]$"); //-10M
+				const boost::regex d1("\\b^(\\d+[dD])$\\b"); //10d
+				const boost::regex d2("^-\\d+[dD]$"); //-10d
+
+				const bool e1Check = boost::regex_match(storeDateInput, e1, boost::regex_constants::match_all);
+				const bool e2Check = boost::regex_match(storeDateInput, e2, boost::regex_constants::match_all);
+				const bool e3Check = boost::regex_match(storeDateInput, e3, boost::regex_constants::match_all);
+				const bool e4Check = boost::regex_match(storeDateInput, e4, boost::regex_constants::match_all);
+				const bool e5Check = boost::regex_match(storeDateInput, e5, boost::regex_constants::match_all);
+				const bool y1Check = boost::regex_match(storeDateInput, y1, boost::regex_constants::match_all);
+				const bool y2Check = boost::regex_match(storeDateInput, y2, boost::regex_constants::match_all);
+
+				const bool m1Check = boost::regex_match(storeDateInput, m1, boost::regex_constants::match_all);
+				const bool m2Check = boost::regex_match(storeDateInput, m2, boost::regex_constants::match_all);
+				const bool d1Check = boost::regex_match(storeDateInput, d1, boost::regex_constants::match_all);
+				const bool d2Check = boost::regex_match(storeDateInput, d2, boost::regex_constants::match_all);
+
+				if (e1Check || e2Check || e3Check || e4Check || e5Check || y1Check || y2Check || m1Check || m2Check || 
+					d1Check || d2Check) {
+
 					std::string year;
 					std::string mon;
 					std::string day;
 
-					//Creating the date 2012-12-12
-					{
+					int iyear;
+					int imon;
+					int iday;
+
+					if (e1Check) {
 						year = storeDateInput.substr(0, 4);
 						mon = storeDateInput.substr(5, 2);
 						day = storeDateInput.substr(8, 2);
+
+						mon.erase(0, mon.find_first_not_of('0'));
+						day.erase(0, day.find_first_not_of('0'));
+
+						iyear = std::stoi(year);
+						imon = std::stoi(mon);
+						iday = std::stoi(day);
+					}
+					else if (e2Check) {
+						year = storeDateInput.substr(0, 4);
+						mon = storeDateInput.substr(5, 1);
+						day = storeDateInput.substr(7, 1);
+
+						mon.erase(0, mon.find_first_not_of('0'));
+						day.erase(0, day.find_first_not_of('0'));
+
+						iyear = std::stoi(year);
+						imon = std::stoi(mon);
+						iday = std::stoi(day);
+					}
+					else if (e3Check) {
+						year = storeDateInput.substr(0, 4);
+						mon = storeDateInput.substr(5, 2);
+						day = storeDateInput.substr(8, 1);
+
+						mon.erase(0, mon.find_first_not_of('0'));
+						day.erase(0, day.find_first_not_of('0'));
+
+						iyear = std::stoi(year);
+						imon = std::stoi(mon);
+						iday = std::stoi(day);
+					}
+					else if (e4Check) {
+						year = storeDateInput.substr(0, 4);
+						mon = storeDateInput.substr(5, 1);
+						day = storeDateInput.substr(7, 2);
+
+						mon.erase(0, mon.find_first_not_of('0'));
+						day.erase(0, day.find_first_not_of('0'));
+
+						iyear = std::stoi(year);
+						imon = std::stoi(mon);
+						iday = std::stoi(day);
+					}
+					else if (e5Check) {
+
+						year = storeDateInput.substr(0, 4);
+						mon = storeDateInput.substr(4, 2);
+						day = storeDateInput.substr(6, 2);
+
+						mon.erase(0, mon.find_first_not_of('0'));
+						day.erase(0, day.find_first_not_of('0'));
+
+						iyear = std::stoi(year);
+						imon = std::stoi(mon);
+						iday = std::stoi(day);
 					}
 
-					mon.erase(0, mon.find_first_not_of('0'));
-					day.erase(0, day.find_first_not_of('0'));
+					else if (y1Check) {
+						std::string sy1 = storeDateInput.substr(0, storeDateInput.length() - 1);
+						//sy1.erase(0, mon.find_first_not_of('0'));
+						int iy1 = std::stoi(sy1);
 
-					dateOut = QuantIO::CreateDate(std::stoi(day), std::stoi(mon), std::stoi(year));
+						std::string storedDate = oldDateText; //2022-12-12
+
+						year = storedDate.substr(0, 4);
+						mon = storedDate.substr(5, 2);
+						day = storedDate.substr(8, 2);
+
+						iyear = std::stoi(year) + iy1;
+						imon = std::stoi(mon);
+						iday = std::stoi(day);
+					}
+
+					else if (y2Check) {
+						std::string sy1 = storeDateInput.substr(1, storeDateInput.length() - 1);
+						//sy1.erase(0, mon.find_first_not_of('0'));
+						int iy1 = std::stoi(sy1);
+
+						std::string storedDate = oldDateText; //2022-12-12
+
+						year = storedDate.substr(0, 4);
+						mon = storedDate.substr(5, 2);
+						day = storedDate.substr(8, 2);
+
+						iyear = std::stoi(year) - iy1 < 1970 ? 1970 : std::stoi(year) - iy1;
+						imon = std::stoi(mon);
+						iday = std::stoi(day);
+					}
+
+					else if (m1Check) {
+						std::string sm = storeDateInput.substr(0, storeDateInput.length() - 1);
+						int im = std::stoi(sm);
+
+						std::string storedDate = oldDateText; //2022-12-12
+
+						year = storedDate.substr(0, 4);
+						mon = storedDate.substr(5, 2);
+						day = storedDate.substr(8, 2);
+
+						iyear = std::stoi(year);
+						imon = std::stoi(mon) + im;
+						iday = std::stoi(day);
+					}
+
+					else if (m2Check) {
+						std::string sm = storeDateInput.substr(1, storeDateInput.length() - 1);
+						int im = std::stoi(sm);
+
+						std::string storedDate = oldDateText; //2022-12-12
+
+						year = storedDate.substr(0, 4);
+						mon = storedDate.substr(5, 2);
+						day = storedDate.substr(8, 2);
+
+						iyear = std::stoi(year);
+						imon = std::stoi(mon) - im;
+						iday = std::stoi(day);
+					}
+
+					else if (d2Check) {
+						std::string sd = storeDateInput.substr(1, storeDateInput.length() - 1);
+						int id = std::stoi(sd);
+
+						std::string storedDate = oldDateText; //2022-12-12
+
+						year = storedDate.substr(0, 4);
+						mon = storedDate.substr(5, 2);
+						day = storedDate.substr(8, 2);
+
+						iyear = std::stoi(year);
+						imon = std::stoi(mon);
+						iday = std::stoi(day) - id;
+					}
+
+					else {
+						std::string sd = storeDateInput.substr(0, storeDateInput.length() - 1);
+						int id = std::stoi(sd);
+
+						std::string storedDate = oldDateText; //2022-12-12
+
+						year = storedDate.substr(0, 4);
+						mon = storedDate.substr(5, 2);
+						day = storedDate.substr(8, 2);
+
+						iyear = std::stoi(year);
+						imon = std::stoi(mon);
+						iday = std::stoi(day) + id;
+
+					}
+
+					dateOut = QuantIO::CreateDate(iday, imon, iyear);
+
 					RecalculateDate(dateOut);
 
 					currentDate.tm_mday = 1;
@@ -739,6 +919,8 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 				else {
 					sprintf(currentDateText, oldDateText);
 				}
+
+				ImGui::SetKeyboardFocusHere(-1);
 
 				/*
 

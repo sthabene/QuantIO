@@ -135,7 +135,7 @@ namespace QuantIO {
 	struct DateFilter {
 		static int Filter(ImGuiInputTextCallbackData* data) {
 			ImWchar c = data->EventChar;
-			if (!(c >= '0' && c <= '9' || strchr("-", (char)c))) {
+			if (!(c >= '0' && c <= '9' || strchr("MmDdYy-/ ", (char)c))) {
 				return 1;
 			};
 			return 0;
