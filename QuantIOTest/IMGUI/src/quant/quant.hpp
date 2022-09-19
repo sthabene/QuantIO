@@ -21,4 +21,4 @@ public:
 };
 
 void CalendarImplementation(std::string& weekend, std::string& calendarId);
-void CalendarAdhocHolidays();
+void CalendarAdhocHolidays(std::string& calendarId);

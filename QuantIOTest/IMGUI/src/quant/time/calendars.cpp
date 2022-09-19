@@ -31,7 +31,9 @@ static ImGuiTabItemFlags tabItemFlag = ImGuiTabItemFlags_None;
 //Calendar Items
 static std::vector<std::vector<std::string>> holidays;
 static std::vector<std::vector<std::string>> holidaysInMonth;
+static std::vector<std::vector<std::string>> adhocHolidays;
 static int holidaysInMonthInit = 1;
+static int adhocHolidaysInMonthInit = 1;
 static int holidaysToShow = 3;
 
 static ImVec2 buttonSz(25.0f * 5.0f, 32.0f); //To change 
@@ -49,7 +51,7 @@ void QuantIOCalendars::DisplayContents() {
 
 		//#rows and columns
 		static int iRows = tableData.size() - 1;
-		static int iColumns = tableData[0].size();
+		static unsigned int iColumns = tableData[0].size();
 
 		//Filtering text field
 		static ImGuiTextFilter filter;
@@ -109,7 +111,7 @@ void QuantIOCalendars::DisplayContents() {
 			clipper.Begin(displayRows);
 
 			while (clipper.Step()) {
-				for (std::size_t row = clipper.DisplayStart + startCount; row < clipper.DisplayEnd + startCount; row++) {
+				for (int row = clipper.DisplayStart + startCount; row < clipper.DisplayEnd + startCount; row++) {
 					std::vector<std::string>* currentRow = &filteredData[row];
 					ImGui::PushID(row);
 					ImGui::TableNextRow(ImGuiTableRowFlags_None, rowHeight);
@@ -165,6 +167,7 @@ void QuantIOCalendars::DisplayContents() {
 							dateInit = 1;
 							holidaysInMonthInit = 1;
 							holidayListInit = 1;
+							adhocHolidaysInMonthInit = 1;
 							holidaysToShow = 3;
 							openOpenPopup = true;
 						};
@@ -224,7 +227,7 @@ void QuantIOCalendars::DisplayContents() {
 					}
 
 					ImGui::SetNextWindowPos(QuantIO::popupLocation(), ImGuiCond_Appearing, ImVec2(0.0f, 0.0f));
-					ImGui::SetNextWindowSize(ImVec2(1000, 1000), ImGuiCond_FirstUseEver);
+					ImGui::SetNextWindowSize(ImVec2(1000, 1050), ImGuiCond_FirstUseEver);
 					if (ImGui::BeginPopupModal(title.c_str(), NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings)) {
 
 						ImGui::SetCursorPosX(900.0f);
@@ -238,16 +241,17 @@ void QuantIOCalendars::DisplayContents() {
 						float titleWidth = ImGui::CalcTextSize(selectedRow[1].c_str()).x + 15.0f;
 						float regionWidth = ImGui::CalcTextSize(selectedRow[2].c_str()).x + 15.0f;
 
-						ImGui::SetCursorPosX( 500.0f - (titleWidth + regionWidth + 50.0f) * 0.5f);
+						ImGui::SetCursorPosX( 500.0f - (titleWidth + 50.0f) * 0.5f);
 						ImGui::PushItemWidth(titleWidth);
 						ImGui::InputText("##Calendar", (char*)selectedRow[1].c_str(), 32,
 							ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
 						ImGui::PopItemWidth();
 
-						ImGui::SameLine();
-						ImGui::TextUnformatted(" - ");
-						ImGui::SameLine();
+						//ImGui::SameLine();
+						//ImGui::TextUnformatted(" - ");
+						//ImGui::SameLine();
 
+						ImGui::SetCursorPosX(500.0f - (regionWidth + 50.0f) * 0.5f);
 						ImGui::PushItemWidth(regionWidth);
 						ImGui::InputText("##CalendarRegion", (char*)selectedRow[2].c_str(), 32,
 							ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
@@ -296,7 +300,7 @@ void QuantIOCalendars::DisplayContents() {
 						currentImpl = implementations[currentImpIndex];
 
 						if (ImGui::BeginCombo(" Implementation", currentImpl.c_str())) {
-							for (int n = 0; n < implementations.size(); n++) {
+							for (std::size_t n = 0; n < implementations.size(); n++) {
 								const bool isSelected = (currentImpIndex == n);
 								if (ImGui::Selectable(implementations[n].c_str(), isSelected)) {
 									currentImpIndex = n;
@@ -357,28 +361,163 @@ void QuantIOCalendars::DisplayContents() {
 							}*/
 							if (ImGui::BeginTabItem("Adhoc Holidays", NULL)) {
 								ImGui::Spacing();
-								CalendarAdhocHolidays();
+								CalendarAdhocHolidays(selectedRow[0]);
 								ImGui::Spacing();
 								ImGui::EndTabItem();
 							}
-							if (ImGui::BeginTabItem("Find Business Days", NULL)) {
-								ImGui::Spacing();
-								
-								ImGui::Indent(40.0f);
+							if (ImGui::BeginTabItem("Calendar Calculations", NULL)) {
 
-								static tm Date1 = QuantIO::CreateDateNow();
-								static tm Date2 = QuantIO::CreateDateNow();
-								
-								ImGui::PushItemWidth(35.0f * 4.0f);
-								if (ImGui::DateChooser2("First Date", Date1, "%Y-%m-%d", false, NULL, 
-									ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
-								}
-								if (ImGui::DateChooser("Second Date", Date2, "%Y-%m-%d", false, NULL,
-									ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
-								}
+								ImGui::BeginChild("##CalendarCalcs", ImVec2(0.0f, 490.0f), false,
+									ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBackground);
+								{
 
-								ImGui::Unindent(40.0f);
-								ImGui::Spacing();
+									ImGui::Spacing();
+
+									ImGui::TextDisabled("Number of Business Days");
+									ImGui::Separator();
+
+									ImGui::Indent(40.0f);
+									static tm Date1 = QuantIO::CreateDateNow();
+									static tm Date2 = QuantIO::CreateDate(Date1.tm_mday, Date1.tm_mon + 1, Date1.tm_year + 1902);
+
+									ImGui::AlignTextToFramePadding();
+									ImGui::TextUnformatted("The number of business days between"); ImGui::SameLine();
+
+									ImGui::PushItemWidth(35.0f * 3.5f);
+									if (ImGui::DateChooser2("##FirstDate", Date1, "%Y-%m-%d", true, NULL,
+										ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+									}
+									ImGui::SameLine();
+									ImGui::TextUnformatted("and");
+									ImGui::SameLine();
+									if (ImGui::DateChooser("##SecondDate", Date2, "%Y-%m-%d", true, NULL,
+										ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+									}
+									ImGui::SameLine();
+									ImGui::TextUnformatted("is");
+									ImGui::SameLine();
+									ImGui::InputText("##BusinessDays", (char*)"22", 4,
+										ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
+									ImGui::Unindent(40.0f);
+
+
+									ImGui::Dummy(ImVec2(0.0f, 20.0f));
+
+									ImGui::TextDisabled("Business Day");
+									ImGui::Separator();
+
+									static tm Date3 = QuantIO::CreateDateNow();
+
+									ImGui::Indent(40.0f);
+
+									ImGui::AlignTextToFramePadding();
+									ImGui::TextUnformatted("This date"); ImGui::SameLine();
+									ImGui::PushItemWidth(35.0f * 3.5f);
+									if (ImGui::DateChooser2("##BusinessDate", Date3, "%Y-%m-%d", true, NULL,
+										ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+									}
+									ImGui::SameLine();
+									ImGui::TextUnformatted("is NOT a business day");
+									ImGui::Unindent(40.0f);
+
+									ImGui::Dummy(ImVec2(0.0f, 20.0f));
+
+									ImGui::TextDisabled("Holiday");
+									ImGui::Separator();
+
+									static tm Date4 = QuantIO::CreateDateNow();
+
+									ImGui::Indent(40.0f);
+
+									ImGui::AlignTextToFramePadding();
+									ImGui::TextUnformatted("This date"); ImGui::SameLine();
+									ImGui::PushItemWidth(35.0f * 3.5f);
+									if (ImGui::DateChooser2("##Holiday", Date4, "%Y-%m-%d", true, NULL,
+										ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+									}
+									ImGui::SameLine();
+									ImGui::TextUnformatted("is NOT a holiday");
+									ImGui::Unindent(40.0f);
+
+
+									ImGui::Dummy(ImVec2(0.0f, 20.0f));
+
+									ImGui::TextDisabled("Is End of the month");
+									ImGui::Separator();
+
+									static tm Date5 = QuantIO::CreateDateNow();
+
+									ImGui::Indent(40.0f);
+
+									ImGui::AlignTextToFramePadding();
+									ImGui::TextUnformatted("This date"); ImGui::SameLine();
+									ImGui::PushItemWidth(35.0f * 3.5f);
+									if (ImGui::DateChooser2("##EndofMonth", Date5, "%Y-%m-%d", true, NULL,
+										ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+									}
+									ImGui::SameLine();
+									ImGui::TextUnformatted("is NOT a the end of the month");
+									ImGui::Unindent(40.0f);
+
+									ImGui::Dummy(ImVec2(0.0f, 20.0f));
+
+									ImGui::TextDisabled("Last Business Day of the month");
+									ImGui::Separator();
+
+									static tm Date6 = QuantIO::CreateDateNow();
+
+									ImGui::Indent(40.0f);
+
+									ImGui::AlignTextToFramePadding();
+									ImGui::TextUnformatted("The last business day of the month for this date"); ImGui::SameLine();
+									ImGui::PushItemWidth(35.0f * 3.5f);
+									if (ImGui::DateChooser2("##LastBusinessDate", Date6, "%Y-%m-%d", true, NULL,
+										ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+									}
+									ImGui::SameLine();
+									ImGui::TextUnformatted("is");
+									ImGui::SameLine();
+									ImGui::InputText("##BusinessDays", (char*)"22", 4,
+										ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
+									ImGui::Unindent(40.0f);
+
+									ImGui::Dummy(ImVec2(0.0f, 20.0f));
+
+									ImGui::TextDisabled("Adjust");
+									ImGui::Separator();
+
+									static tm Date7 = QuantIO::CreateDateNow();
+
+									ImGui::Indent(40.0f);
+
+
+									
+									ImGui::PushItemWidth(35.0f * 3.5f);
+									if (ImGui::DateChooser2("##adjust", Date7, "%Y-%m-%d", true, NULL,
+										ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+									}
+									
+									ImGui::Unindent(40.0f);
+
+									ImGui::Dummy(ImVec2(0.0f, 20.0f));
+									ImGui::TextDisabled("Advance");
+									ImGui::Separator();
+
+									static tm Date8 = QuantIO::CreateDateNow();
+
+									ImGui::Indent(40.0f);
+
+
+									ImGui::PushItemWidth(35.0f * 3.5f);
+									if (ImGui::DateChooser2("##advance", Date8, "%Y-%m-%d", true, NULL,
+										ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+									}
+
+									ImGui::Unindent(40.0f);
+
+									ImGui::Spacing();
+								}
+								ImGui::EndChild();
 
 								ImGui::EndTabItem();
 							}
@@ -386,7 +525,7 @@ void QuantIOCalendars::DisplayContents() {
 						}
 
 
-						ImGui::SetCursorPosY(1000 - 1.5f * buttonSz.y);
+						ImGui::SetCursorPosY(1050 - 1.5f * buttonSz.y);
 
 						ImGui::Separator();
 						if (ImGui::Button("Close")) {
@@ -441,6 +580,8 @@ static tm dateOut;
 
 void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 
+	
+
 	ImGui::BeginChild("##CalendarLeft", ImVec2(ImGui::GetContentRegionAvail().x*0.5f, 490.0f), false,
 		ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBackground);
 	{
@@ -461,7 +602,6 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 			static char oldDateText[10] = { '\0' };
 			std::string storeDateInput;
 			
-
 			//Running the query
 			if (dateInit & 1) {
 				dateOut = *localtime(&now);
@@ -920,7 +1060,7 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 					sprintf(currentDateText, oldDateText);
 				}
 
-				ImGui::SetKeyboardFocusHere(-1);
+				//ImGui::SetKeyboardFocusHere(-1);
 
 				/*
 
@@ -1010,13 +1150,12 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 		else {
 			filteredholidays = holidays;
 		}
-		if (ImGui::BeginTable("CalendarHolidays", 2, ImGuiTableFlags_ScrollY | ImGuiTableFlags_ScrollX |
-			ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV,
+		if (ImGui::BeginTable("CalendarHolidays", 2, QuantIO::tableFlags,
 			ImVec2(0.0f, 0.0f), 0.0f)) {
 			ImGui::TableSetupScrollFreeze(0, 1);
-			ImGui::TableSetupColumn("DATE", ImGuiTableColumnFlags_NoHide);
+			ImGui::TableSetupColumn("DATE", ImGuiTableColumnFlags_NoHide, 200.0f);
 			//ImGui::TableSetupColumn(holidays[0][0].c_str(), ImGuiTableColumnFlags_NoHide, 0.0f);
-			ImGui::TableSetupColumn("HOLIDAY", ImGuiTableColumnFlags_NoHide);
+			ImGui::TableSetupColumn("HOLIDAY", ImGuiTableColumnFlags_NoHide, 400.0f);
 			//ImGui::TableSetupColumn(holidays[0][1].c_str(), ImGuiTableColumnFlags_NoHide, 0.0f);
 			ImGui::TableHeadersRow();
 
@@ -1024,7 +1163,7 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 			clipper.Begin(filteredholidays.size());
 
 			while (clipper.Step()) {
-				for (std::size_t i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
+				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
 					ImGui::PushID(i + 101);
 
 					ImGui::TableNextRow();
@@ -1046,39 +1185,51 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 	ImGui::EndChild();
 }
 
-void CalendarAdhocHolidays() {
-	ImGui::BeginChild("##AdhocHolidays", ImVec2(0, 0), false, ImGuiWindowFlags_NoBackground);
+void CalendarAdhocHolidays(std::string& calendarId) {
+	ImGui::BeginChild("##AdhocHolidays", ImVec2(0, 450.0f), false, ImGuiWindowFlags_NoBackground);
 	{
-		if (ImGui::BeginTable("CalendarHolidays", 2, ImGuiTableFlags_ScrollY | ImGuiTableFlags_ScrollX |
-			ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV,
+
+
+		if (adhocHolidaysInMonthInit & 1) {
+			boost::format adhoHholInMonthQuery = boost::format("SELECT DATE, HOLIDAY_DESC FROM HOLIDAYS_ADHOC WHERE CALENDAR = %1%") % calendarId;
+			adhocHolidays = QuantIO::dbConnection.getTableData2(adhoHholInMonthQuery.str(), false);
+			adhocHolidaysInMonthInit++;
+		}
+
+
+		if (ImGui::BeginTable("CalendarHolidays", 2, QuantIO::tableFlags,
 			ImVec2(0.0f, 0.0f), 0.0f)) {
 			ImGui::TableSetupScrollFreeze(0, 1);
-			ImGui::TableSetupColumn("DATE", ImGuiTableColumnFlags_NoHide);
-			ImGui::TableSetupColumn("HOLIDAY", ImGuiTableColumnFlags_NoHide);
+			ImGui::TableSetupColumn("DATE", ImGuiTableColumnFlags_NoHide, 100.0f);
+			ImGui::TableSetupColumn("HOLIDAY", ImGuiTableColumnFlags_NoHide, 400.0f);
 			ImGui::TableHeadersRow();
 
-			/*static ImGuiListClipper clipper;
-			clipper.Begin(filteredholidays.size());
+			static ImGuiListClipper clipper;
+			clipper.Begin(adhocHolidays.size());
 
 			while (clipper.Step()) {
-				for (std::size_t i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
+				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++) {
 					ImGui::PushID(i + 101);
 
 					ImGui::TableNextRow();
 
 					ImGui::TableSetColumnIndex(0);
-					ImGui::Text(filteredholidays[i][0].c_str());
+					ImGui::Text(adhocHolidays[i][0].c_str());
 
 					ImGui::TableSetColumnIndex(1);
-					ImGui::Text(filteredholidays[i][1].c_str());
+					ImGui::Text(adhocHolidays[i][1].c_str());
 
 					ImGui::PopID();
 				}
 			}
 
-			clipper.End();*/
+			clipper.End();
 			ImGui::EndTable();
 		}
 	}
 	ImGui::EndChild();
+
+	if (ImGui::Button("Insert")) {
+	}
+
 }

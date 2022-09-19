@@ -82,6 +82,8 @@ int main() {
 
 	Argentina saCal;
 
+	saCal.businessDaysBetween();
+
 	std::vector<QuantLib::Date> saHolidays = saCal.holidayList(Date(1, Jan, 2000), Date(31, Dec, 2100), false);
 	for (Date date : saHolidays) {
 		Weekday w = date.weekday();
