@@ -21,9 +21,15 @@
     <ClCompile Include="src\QUANTLIB.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\time\calendar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\QUANTLIB.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\time\calendar.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

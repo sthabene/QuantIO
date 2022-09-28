@@ -299,19 +299,44 @@ void QuantIOCurrency::DisplayContents() {
 					ImGui::SetNextWindowPos(QuantIO::popupLocation(), ImGuiCond_Appearing, ImVec2(0.0f, 0.0f));
 					ImGui::SetNextWindowSize(ImVec2(800, 700), ImGuiCond_FirstUseEver);
 					if (ImGui::BeginPopupModal(title.c_str(), NULL, ImGuiWindowFlags_NoResize |ImGuiWindowFlags_NoSavedSettings)) {
+						
+						
+						ImGui::SetCursorPosX(680.0f);
+						ImGui::PushItemWidth(ImGui::CalcTextSize(selectedRow[0].c_str()).x + 15.0f);
+						ImGui::InputText(" Code", (char*)selectedRow[0].c_str(), 4,
+							ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
+						ImGui::PopItemWidth();
 						ImGui::Spacing();
+
+
+						float titleWidth = ImGui::CalcTextSize(selectedRow[1].c_str()).x + 15.0f;
+
+						ImGui::SetCursorPosX(400.0f - (titleWidth + 50.0f) * 0.5f);
+						ImGui::PushItemWidth(titleWidth);
+						ImGui::InputText("##Name", (char*)selectedRow[1].c_str(), 32,
+							ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
+						ImGui::PopItemWidth();
+
+						ImGui::Dummy(ImVec2(0.0f, 35.0f));
+
+						ImGui::Separator();
+						
+						
+						
+						
+						/*ImGui::Spacing();
 						ImGui::SetCursorPosX(400 - ImGui::CalcTextSize("Details").x * 0.5f);
 						ImGui::TextDisabled("Details");
-						ImGui::Spacing();
+						ImGui::Spacing();*/
 						
-						ImGui::Indent(100.0f);
-						ImGui::PushItemWidth(rowHeight * 15.0f);
+						ImGui::Indent(180.0f);
+						ImGui::PushItemWidth(rowHeight * 10.0f);
 						//Open modal details
-						ImGui::InputText("Code", (char*)selectedRow[0].c_str(), 32,
+						/*ImGui::InputText("Code", (char*)selectedRow[0].c_str(), 32,
 							ImGuiInputTextFlags_CharsUppercase | ImGuiDir_Left | popupInputFlags);
 						
 						ImGui::InputText("Name", (char*)selectedRow.at(1).c_str(), 32,
-							popupInputFlags);
+							popupInputFlags);*/
 
 						ImGui::InputText("Numeric code", (char*)selectedRow.at(2).c_str(), 32,
 							popupInputFlags | ImGuiInputTextFlags_CharsDecimal);
@@ -368,7 +393,7 @@ void QuantIOCurrency::DisplayContents() {
 						ImGui::SameLine();
 						HelpMarker("Cross currency triangulation");
 						ImGui::PopItemWidth();
-						ImGui::Unindent(100.0f);
+						ImGui::Unindent(180.0f);
 
 						ImGui::Spacing();
 						ImGui::Separator();

@@ -16,7 +16,7 @@ public:
 
 class QuantIOCalendars : public QuantIO::Window {
 public:
-	QuantIOCalendars() : Window("Calendars", "Time", true) { };
+	QuantIOCalendars() : Window("Calendars", "Time", false) { };
 	void DisplayContents() override;
 };
 

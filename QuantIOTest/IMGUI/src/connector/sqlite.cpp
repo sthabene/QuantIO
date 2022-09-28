@@ -139,7 +139,7 @@ namespace QuantIO {
         }
         statement.reset();
 
-        if (transpose) {
+        if (transpose && tableVec.size() > 0) {
             std::vector<std::vector<std::string>> tresult(
                 tableVec[0].size(), std::vector<std::string>(tableVec.size())
             );

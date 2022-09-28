@@ -13,6 +13,8 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
+#include <ql/time/date.hpp>
+
 #include "../../vendor/IconFontCppHeaders/IconsFontAwesome5.h"
 #include "addons/imguidatechooser/imguidatechooser.h"
 

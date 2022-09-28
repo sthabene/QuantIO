@@ -3,12 +3,15 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+#include <stdlib.h> //Abs
+
 #include "../quant.hpp"
 
 #include "boost/algorithm/string.hpp"
 #include "boost/format.hpp"
 #include "boost/regex.hpp"
-#include "ql/time/calendar.hpp"
+#include "time/calendar.hpp"
+
 
 
 static std::string query = "SELECT CALENDAR_ID, CALENDAR_LABEL, REGION, MARKET FROM CALENDAR ORDER BY REGION, CALENDAR_LABEL";
@@ -22,8 +25,6 @@ static bool showFilter = false;
 
 //Open item
 static std::vector<std::string> selectedRow;
-std::vector<std::string> implementations;
-static std::vector<std::string> selectedImpl;
 static ImGuiInputTextFlags popupInputFlags = ImGuiInputTextFlags_None;
 static ImGuiTabItemFlags tabItemFlag = ImGuiTabItemFlags_None;
 
@@ -36,6 +37,13 @@ static int holidaysInMonthInit = 1;
 static int adhocHolidaysInMonthInit = 1;
 static int holidaysToShow = 3;
 
+
+//QuantLib
+CustomCalendar mainCalendar; //static ext::shared_ptr<CustomCalendar> mainCalendar;
+static int calsInit = 1;
+//static int numBusinessDays = 0;
+
+//IMGUI 
 static ImVec2 buttonSz(25.0f * 5.0f, 32.0f); //To change 
 
 void QuantIOCalendars::DisplayContents() {
@@ -157,13 +165,20 @@ void QuantIOCalendars::DisplayContents() {
 							popupInputFlags = ImGuiInputTextFlags_ReadOnly;
 							tabItemFlag = ImGuiTabItemFlags_None;
 
-							boost::format calQuery = boost::format("SELECT T1.CALENDAR_ID, T1.CALENDAR_LABEL, T1.REGION, T1.MARKET, T2.IMPLEM_DESC, T2.WEEKEND FROM CALENDAR T1, IMPLEMENTATION T2 WHERE T1.IMPLEMENTATION = T2.IMPLEM_ID AND T1.CALENDAR_ID = %1%") % currentRow->at(0);
+							boost::format calQuery = boost::format("SELECT T1.CALENDAR_ID, T1.CALENDAR_LABEL, T1.REGION, T1.MARKET, T1.WEEKEND FROM CALENDAR T1 WHERE T1.CALENDAR_ID = %1%") % currentRow->at(0);
+							boost::format holidaysQuery = boost::format("SELECT DATE FROM HOLIDAYS WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%3%-12-31') UNION SELECT DATE FROM HOLIDAYS_ADHOC WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%3%-12-31')") % currentRow->at(0) % 2000 % 2050;
+
+
 							selectedRow = QuantIO::dbConnection.getTableData2(calQuery.str(), false, false)[0];
 
-							std::string implQuery = "SELECT IMPLEM_DESC FROM IMPLEMENTATION";
-							implementations = QuantIO::dbConnection.getTableData2(implQuery, false, true)[0];
+							std::vector<std::vector<std::string>> returnedHolidays = QuantIO::dbConnection.getTableData2(holidaysQuery.str(), false, true);
 
-							//selectedRow = *currentRow;
+							mainCalendar.setAnotherCalendar(currentRow->at(1), selectedRow.at(4)); 
+
+							if (returnedHolidays.size() > 0) {
+								mainCalendar.addHolidays(returnedHolidays[0]);
+							}
+
 							dateInit = 1;
 							holidaysInMonthInit = 1;
 							holidayListInit = 1;
@@ -226,6 +241,7 @@ void QuantIOCalendars::DisplayContents() {
 						tabItemFlag = ImGuiTabItemFlags_None;
 					}
 
+
 					ImGui::SetNextWindowPos(QuantIO::popupLocation(), ImGuiCond_Appearing, ImVec2(0.0f, 0.0f));
 					ImGui::SetNextWindowSize(ImVec2(1000, 1050), ImGuiCond_FirstUseEver);
 					if (ImGui::BeginPopupModal(title.c_str(), NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings)) {
@@ -265,8 +281,12 @@ void QuantIOCalendars::DisplayContents() {
 						const char* market[2] = { "Exchange", "Settlement" };
 						int selectedItemMarket = selectedRow[3] == "Exchange" ? 0 : 1;
 						static int itemCurrent = 0;
+
+						static std::string currentWeek = "17";
+
 						if (openEditPopup || openOpenPopup) {
 							itemCurrent = selectedItemMarket;
+							currentWeek = selectedRow.at(4);
 						}
 
 						ImGui::Indent(320.0f);
@@ -284,41 +304,8 @@ void QuantIOCalendars::DisplayContents() {
 							}
 							ImGui::EndCombo();
 						}
-					
-						ptrdiff_t pos = std::find(implementations.begin(), implementations.end(), selectedRow.at(4))
-							- implementations.begin();
 
-						static int currentImpIndex = 0;
-						static std::string currentImpl = "Western";
-						static std::string currentWeek = "17";
-
-						if (openEditPopup || openOpenPopup) {
-							currentImpIndex = pos;
-							currentImpl = selectedRow.at(4).c_str();
-							currentWeek = selectedRow.at(5);
-						}
-						currentImpl = implementations[currentImpIndex];
-
-						if (ImGui::BeginCombo(" Implementation", currentImpl.c_str())) {
-							for (std::size_t n = 0; n < implementations.size(); n++) {
-								const bool isSelected = (currentImpIndex == n);
-								if (ImGui::Selectable(implementations[n].c_str(), isSelected)) {
-									currentImpIndex = n;
-									boost::format implIndexQuery = boost::format(
-										"SELECT IMPLEM_DESC, WEEKEND FROM IMPLEMENTATION WHERE IMPLEM_DESC = '%1%'") % 
-										implementations[currentImpIndex];
-									selectedImpl = QuantIO::dbConnection.getTableData2(
-										implIndexQuery.str(), false, false)[0];
-									currentWeek = selectedImpl[1];
-								}
-								if (isSelected) {
-									ImGui::SetItemDefaultFocus();
-								}
-							}
-							ImGui::EndCombo();
-						}
-						ImGui::SameLine();
-						HelpMarker("Drives weekend days and easter holidays");
+						//static std::string currentWeek = selectedRow.at(4);
 
 						ImGui::Unindent(320.0f);
 						ImGui::PopItemWidth();
@@ -376,28 +363,80 @@ void QuantIOCalendars::DisplayContents() {
 									ImGui::TextDisabled("Number of Business Days");
 									ImGui::Separator();
 
+									
+
 									ImGui::Indent(40.0f);
 									static tm Date1 = QuantIO::CreateDateNow();
-									static tm Date2 = QuantIO::CreateDate(Date1.tm_mday, Date1.tm_mon + 1, Date1.tm_year + 1902);
+									static tm Date2 = QuantIO::CreateDate(Date1.tm_mday, Date1.tm_mon+1, Date1.tm_year + 1900);
+
+									static bool includeFirst = false;
+									static bool includeLast = false;
+									
+									static int numBusinessDays = 0;
+
+									static tm busDayDate = QuantIO::CreateDateNow();
+									static tm holDayDate = QuantIO::CreateDateNow();
+									static tm lastMonDate = QuantIO::CreateDateNow();
+
+									static bool busDay = false;
+									static bool holDay = false;
+									static bool lastMon = false;
+
+									if (calsInit & 1) {
+										numBusinessDays = 0;
+										Date1 = QuantIO::CreateDateNow();
+										Date2 = QuantIO::CreateDate(Date1.tm_mday, Date1.tm_mon + 1, Date1.tm_year + 1900);
+
+										busDay = mainCalendar.isBusinessDay(ConvertToQlDate(busDayDate));
+										holDay = mainCalendar.isHoliday(ConvertToQlDate(holDayDate));
+										lastMon = mainCalendar.isEndOfMonth(ConvertToQlDate(lastMonDate));
+
+										calsInit++;
+									}
 
 									ImGui::AlignTextToFramePadding();
 									ImGui::TextUnformatted("The number of business days between"); ImGui::SameLine();
 
 									ImGui::PushItemWidth(35.0f * 3.5f);
-									if (ImGui::DateChooser2("##FirstDate", Date1, "%Y-%m-%d", true, NULL,
+									if (ImGui::DateChooser2("##FirstDate", Date1, "%Y-%m-%d", false, NULL,
 										ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+
+										QuantLib::Date from = ConvertToQlDate(Date2);
+										QuantLib::Date to = ConvertToQlDate(Date1);
+
+										numBusinessDays = mainCalendar.businessDaysBetween(from, to, includeFirst, includeLast);
+										
 									}
 									ImGui::SameLine();
 									ImGui::TextUnformatted("and");
 									ImGui::SameLine();
-									if (ImGui::DateChooser("##SecondDate", Date2, "%Y-%m-%d", true, NULL,
+									if (ImGui::DateChooser2("##SecondDate", Date2, "%Y-%m-%d", false, NULL,
 										ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+
+										QuantLib::Date from = ConvertToQlDate(Date2);
+										QuantLib::Date to = ConvertToQlDate(Date1);
+
+										numBusinessDays = mainCalendar.businessDaysBetween(from, to, includeFirst, includeLast);
+										
+										printf("%s\n", mainCalendar.name().c_str());
 									}
 									ImGui::SameLine();
 									ImGui::TextUnformatted("is");
-									ImGui::SameLine();
-									ImGui::InputText("##BusinessDays", (char*)"22", 4,
+									ImGui::SameLine(); 
+									ImGui::InputText("##BusinessDays", (char*)std::to_string(abs(numBusinessDays)).c_str(), 4,
 										ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
+
+									if (ImGui::Checkbox("Include First", &includeFirst)) {
+										QuantLib::Date from = ConvertToQlDate(Date2);
+										QuantLib::Date to = ConvertToQlDate(Date1);
+										numBusinessDays = mainCalendar.businessDaysBetween(from, to, includeFirst, includeLast);
+									};
+									if (ImGui::Checkbox("Include Last", &includeLast)) {
+										QuantLib::Date from = ConvertToQlDate(Date2);
+										QuantLib::Date to = ConvertToQlDate(Date1);
+										numBusinessDays = mainCalendar.businessDaysBetween(from, to, includeFirst, includeLast);
+									};
+
 									ImGui::Unindent(40.0f);
 
 
@@ -406,57 +445,76 @@ void QuantIOCalendars::DisplayContents() {
 									ImGui::TextDisabled("Business Day");
 									ImGui::Separator();
 
-									static tm Date3 = QuantIO::CreateDateNow();
+									
 
 									ImGui::Indent(40.0f);
 
 									ImGui::AlignTextToFramePadding();
 									ImGui::TextUnformatted("This date"); ImGui::SameLine();
 									ImGui::PushItemWidth(35.0f * 3.5f);
-									if (ImGui::DateChooser2("##BusinessDate", Date3, "%Y-%m-%d", true, NULL,
+									if (ImGui::DateChooser2("##BusinessDate", busDayDate, "%Y-%m-%d", false, NULL,
 										ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+
+										busDay = mainCalendar.isBusinessDay(ConvertToQlDate(busDayDate));
+
 									}
-									ImGui::SameLine();
-									ImGui::TextUnformatted("is NOT a business day");
+									if (!busDay) {
+										ImGui::SameLine();
+										ImGui::TextUnformatted("is NOT a business day");
+									}
+									else {
+										ImGui::SameLine();
+										ImGui::TextUnformatted("is a business day");
+									}
+									
 									ImGui::Unindent(40.0f);
 
 									ImGui::Dummy(ImVec2(0.0f, 20.0f));
 
-									ImGui::TextDisabled("Holiday");
+									ImGui::TextDisabled("Holiday (non-business day)");
 									ImGui::Separator();
-
-									static tm Date4 = QuantIO::CreateDateNow();
 
 									ImGui::Indent(40.0f);
 
 									ImGui::AlignTextToFramePadding();
 									ImGui::TextUnformatted("This date"); ImGui::SameLine();
 									ImGui::PushItemWidth(35.0f * 3.5f);
-									if (ImGui::DateChooser2("##Holiday", Date4, "%Y-%m-%d", true, NULL,
+									if (ImGui::DateChooser2("##Holiday", holDayDate, "%Y-%m-%d", false, NULL,
 										ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+										holDay = mainCalendar.isHoliday(ConvertToQlDate(holDayDate));
 									}
-									ImGui::SameLine();
-									ImGui::TextUnformatted("is NOT a holiday");
+									if (!holDay) {
+										ImGui::SameLine();
+										ImGui::TextUnformatted("is NOT a holiday");
+									}
+									else {
+										ImGui::SameLine();
+										ImGui::TextUnformatted("is a holiday");
+									}
 									ImGui::Unindent(40.0f);
-
 
 									ImGui::Dummy(ImVec2(0.0f, 20.0f));
 
 									ImGui::TextDisabled("Is End of the month");
 									ImGui::Separator();
 
-									static tm Date5 = QuantIO::CreateDateNow();
-
 									ImGui::Indent(40.0f);
 
 									ImGui::AlignTextToFramePadding();
 									ImGui::TextUnformatted("This date"); ImGui::SameLine();
 									ImGui::PushItemWidth(35.0f * 3.5f);
-									if (ImGui::DateChooser2("##EndofMonth", Date5, "%Y-%m-%d", true, NULL,
+									if (ImGui::DateChooser2("##EndofMonth", lastMonDate, "%Y-%m-%d", false, NULL,
 										ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+										lastMon = mainCalendar.isEndOfMonth(ConvertToQlDate(lastMonDate));
 									}
-									ImGui::SameLine();
-									ImGui::TextUnformatted("is NOT a the end of the month");
+									if (!lastMon) {
+										ImGui::SameLine();
+										ImGui::TextUnformatted("is NOT at the end of the month");
+									}
+									else {
+										ImGui::SameLine();
+										ImGui::TextUnformatted("is at the end of the month");
+									}
 									ImGui::Unindent(40.0f);
 
 									ImGui::Dummy(ImVec2(0.0f, 20.0f));
@@ -471,13 +529,13 @@ void QuantIOCalendars::DisplayContents() {
 									ImGui::AlignTextToFramePadding();
 									ImGui::TextUnformatted("The last business day of the month for this date"); ImGui::SameLine();
 									ImGui::PushItemWidth(35.0f * 3.5f);
-									if (ImGui::DateChooser2("##LastBusinessDate", Date6, "%Y-%m-%d", true, NULL,
+									if (ImGui::DateChooser2("##LastBusinessDate", Date6, "%Y-%m-%d", false, NULL,
 										ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
 									}
 									ImGui::SameLine();
 									ImGui::TextUnformatted("is");
 									ImGui::SameLine();
-									ImGui::InputText("##BusinessDays", (char*)"22", 4,
+									ImGui::InputText("###LastBusinessDay", (char*)"22", 4,
 										ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
 									ImGui::Unindent(40.0f);
 
@@ -493,7 +551,7 @@ void QuantIOCalendars::DisplayContents() {
 
 									
 									ImGui::PushItemWidth(35.0f * 3.5f);
-									if (ImGui::DateChooser2("##adjust", Date7, "%Y-%m-%d", true, NULL,
+									if (ImGui::DateChooser2("##adjust", Date7, "%Y-%m-%d", false, NULL,
 										ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
 									}
 									
@@ -509,7 +567,7 @@ void QuantIOCalendars::DisplayContents() {
 
 
 									ImGui::PushItemWidth(35.0f * 3.5f);
-									if (ImGui::DateChooser2("##advance", Date8, "%Y-%m-%d", true, NULL,
+									if (ImGui::DateChooser2("##advance", Date8, "%Y-%m-%d", false, NULL,
 										ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
 									}
 
@@ -530,12 +588,16 @@ void QuantIOCalendars::DisplayContents() {
 						ImGui::Separator();
 						if (ImGui::Button("Close")) {
 							ImGui::CloseCurrentPopup();
+							calsInit = 1;
+							mainCalendar.resetAddedAndRemovedHolidays();
 						}
 
 						if (popupInputFlags == ImGuiInputTextFlags_None) {
 							ImGui::SameLine(ImGui::CalcTextSize("Close").x + 30.0f);
 							if (ImGui::Button("Save")) {
 								ImGui::CloseCurrentPopup();
+								calsInit = 1;
+								mainCalendar.resetAddedAndRemovedHolidays();
 							}
 						}
 
@@ -612,7 +674,7 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 				boost::format holQuery;
 				switch (holidaysToShow) {
 				case 3:
-					holQuery = boost::format("SELECT DATE, HOLIDAY_DESC FROM HOLIDAYS WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%2%-12-31')") % calendarId % (1900 + today.tm_year);
+					holQuery = boost::format("SELECT DATE, HOLIDAY_DESC FROM HOLIDAYS WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%2%-12-31') UNION SELECT DATE, HOLIDAY_DESC FROM HOLIDAYS_ADHOC WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%2%-12-31')") % calendarId % (1900 + today.tm_year);
 					break;
 				case 1:
 					holQuery = boost::format("SELECT DATE, HOLIDAY_DESC FROM HOLIDAYS WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%2%-12-31')") % calendarId % (1900 + today.tm_year - 1);
@@ -635,7 +697,7 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 			if (holidaysInMonthInit & 1) {
 				boost::format currentMon("%02d");
 				currentMon % (currentDate.tm_mon + 1);
-				boost::format holInMonthQuery = boost::format("SELECT SUBSTR(DATE, 9), HOLIDAY_DESC FROM HOLIDAYS WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-%3%-01') AND DATE('%2%-%3%-31')") % calendarId % (1900 + currentDate.tm_year) % currentMon.str();
+				boost::format holInMonthQuery = boost::format("SELECT SUBSTR(DATE, 9), HOLIDAY_DESC FROM HOLIDAYS WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-%3%-01') AND DATE('%2%-%3%-31') UNION SELECT SUBSTR(DATE, 9), HOLIDAY_DESC FROM HOLIDAYS_ADHOC WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-%3%-01') AND DATE('%2%-%3%-31')") % calendarId % (1900 + currentDate.tm_year) % currentMon.str();
 				holidaysInMonth = QuantIO::dbConnection.getTableData2(holInMonthQuery.str(), false);
 				holidaysInMonthInit++;
 			}
@@ -719,10 +781,25 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 
 			static char curDayStr[3] = "";
 
-			const std::string weekendDay1 = weekend.substr(0, 1);
-			const std::string weekendDay2 = weekend.substr(1, 1);
+			const std::string weekendDay1 = weekend.length() > 0 ? weekend.substr(0, 1) : "0";
+			const std::string weekendDay2 = weekend.length() > 1 ? weekend.substr(1, 1) : "0";
+			const std::string weekendDay3 = weekend.length() > 2 ? weekend.substr(2, 1) : "0";
+			const std::string weekendDay4 = weekend.length() > 3 ? weekend.substr(3, 1) : "0";
+			const std::string weekendDay5 = weekend.length() > 4 ? weekend.substr(4, 1) : "0";
+			const std::string weekendDay6 = weekend.length() > 5 ? weekend.substr(5, 1) : "0";
+			const std::string weekendDay7 = weekend.length() > 6 ? weekend.substr(6, 1) : "0";
 
-			int weekendDays[2] = { std::stoi(weekendDay1) - 1, std::stoi(weekendDay2) - 1};
+
+
+			int weekendDays[7] = { 
+				std::stoi(weekendDay1) - 1, 
+				std::stoi(weekendDay2) - 1,
+				std::stoi(weekendDay3) - 1,
+				std::stoi(weekendDay4) - 1,
+				std::stoi(weekendDay5) - 1,
+				std::stoi(weekendDay6) - 1,
+				std::stoi(weekendDay7) - 1
+			};
 			
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0f, 1.0f, 1.0f, 0.0f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.17f, 0.31f, 0.46f, 0.80f));
@@ -731,15 +808,20 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 			for (int dw = 0; dw < 7; dw++) {
 				ImGui::BeginGroup();
 
-				if (dw == weekendDays[1] || dw == weekendDays[0]) {
-					ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.667f, 0.167f, 0.167f, 1.0f));
+				for (int i = 0; i < 7; i++) {
+					if (dw == weekendDays[i]) {
+						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.667f, 0.167f, 0.167f, 1.0f));
+					}
 				}
+
 				ImGui::Text("  %s", dayNames[dw]);
 				ImGui::Separator();
 				ImGui::Spacing();
 
-				if (dw == weekendDays[1] || dw == weekendDays[0]) {
-					ImGui::PopStyleColor();
+				for (int i = 0; i < 7; i++) {
+					if (dw == weekendDays[i]) {
+						ImGui::PopStyleColor();
+					}
 				}
 
 				int curDay = dw - currentDate.tm_wday;
@@ -762,8 +844,10 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 						bool selectedDay = (cday + 1 == dateOut.tm_mday && currentDate.tm_year == dateOut.tm_year && 
 							currentDate.tm_mon == dateOut.tm_mon);
 
-						if (dw == weekendDays[1] || dw == weekendDays[0]) {
-							ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.667f, 0.167f, 0.167f, 1.0f));
+						for (int i = 0; i < 7; i++) {
+							if (dw == weekendDays[i]) {
+								ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.667f, 0.167f, 0.167f, 1.0f));
+							}
 						}
 						
 						if (todayDay) {
@@ -791,8 +875,10 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 								dateOut.tm_mday);
 							sprintf(oldDateText, currentDateText);
 						}
-						if (dw == weekendDays[1] || dw == weekendDays[0]) {
-							ImGui::PopStyleColor();
+						for (int i = 0; i < 7; i++) {
+							if (dw == weekendDays[i]) {
+								ImGui::PopStyleColor();
+							}
 						}
 						if (todayDay) {
 							ImGui::PopStyleColor();
@@ -847,7 +933,7 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 				const boost::regex 
 					e1("\\b^(1[9][7-9]\\d{1}|2[01]\\d{2})[\\/\\s-](0[1-9]|1[012])[\\/\\s-](0[1-9]|[12][0-9]|3[01])$\\b"); //2022-02-12
 				const boost::regex 
-					e2("\\b^(1[9][7-9]\\d{1}|2[01]\\d{2})[\\/\\s-]([1-9]|1[012])[\\/\\s-]([1-9]|[12][0-9]|3[01])$\\b"); //2022-2-1
+					e2("\\b^(1[9][7-9]\\d{1}|2[01]\\d{2})[\\/\\s-]([1-9])[\\/\\s-]([1-9]|[12][0-9]|3[01])$\\b"); //2022-2-1
 				const boost::regex 
 					e3("\\b^(1[9][7-9]\\d{1}|2[01]\\d{2})[\\/\\s-](0[1-9]|1[012])[\\/\\s-]([1-9]|[12][0-9]|3[01])$\\b"); //2022-02-1
 				const boost::regex 

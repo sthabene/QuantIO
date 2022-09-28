@@ -96,6 +96,9 @@
     <ClCompile Include="src\quant\time\calendars.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\QUANTLIB\src\time\calendar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\vendor\imgui\imconfig.h">

@@ -74,7 +74,7 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(ProjectDir)bin\$(platform)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)bin\intermediaries\$(platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)vendor\sqlite\include\;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)vendor\sqlite\include\;$(SolutionDir)QuantIOTest\QUANTLIB\src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>true</LinkIncremental>
@@ -155,6 +155,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\QUANTLIB\src\time\calendar.cpp" />
     <ClCompile Include="src\connector\database.cpp" />
     <ClCompile Include="src\connector\error.cpp" />
     <ClCompile Include="src\connector\sqlite.cpp" />
