@@ -44,6 +44,7 @@ void QuantIO::AddWindows() {
     QuantIO::ActiveWindows.push_back(QuantIOCurrency());
     QuantIO::ActiveWindows.push_back(QuantIOConfig());
     QuantIO::ActiveWindows.push_back(QuantIOCalendars());
+    QuantIO::ActiveWindows.push_back(QuantIODayCounters());
     QuantIO::ActiveWindows.push_back(AddonsDatePicker());
     QuantIO::ActiveWindows.push_back(AddonsIcons());
 }

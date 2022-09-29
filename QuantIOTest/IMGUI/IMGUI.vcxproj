@@ -183,6 +183,7 @@
     <ClCompile Include="src\quant\math\rounding\rounding.cpp" />
     <ClCompile Include="src\quant\tables\tables.cpp" />
     <ClCompile Include="src\quant\time\calendars.cpp" />
+    <ClCompile Include="src\quant\time\daycounters.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\connector\include\database.hpp" />

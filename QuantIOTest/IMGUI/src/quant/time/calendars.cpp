@@ -377,12 +377,17 @@ void QuantIOCalendars::DisplayContents() {
 									static tm busDayDate = QuantIO::CreateDateNow();
 									static tm holDayDate = QuantIO::CreateDateNow();
 									static tm lastMonDate = QuantIO::CreateDateNow();
+									static tm lastBusDate = QuantIO::CreateDateNow();
 
 									static bool busDay = false;
 									static bool holDay = false;
 									static bool lastMon = false;
 
-									if (calsInit & 1) {
+									static tm lastBusResult = QuantIO::CreateDateNow();
+									static char lastBusResultOut[10] = { '\0' };
+									static QuantLib::Date lastBusResultQl = QuantLib::Date::todaysDate();
+									
+									if ( (calsInit & 1) && currentWeek.length() < 7) {
 										numBusinessDays = 0;
 										Date1 = QuantIO::CreateDateNow();
 										Date2 = QuantIO::CreateDate(Date1.tm_mday, Date1.tm_mon + 1, Date1.tm_year + 1900);
@@ -390,6 +395,8 @@ void QuantIOCalendars::DisplayContents() {
 										busDay = mainCalendar.isBusinessDay(ConvertToQlDate(busDayDate));
 										holDay = mainCalendar.isHoliday(ConvertToQlDate(holDayDate));
 										lastMon = mainCalendar.isEndOfMonth(ConvertToQlDate(lastMonDate));
+										lastBusResultQl = mainCalendar.endOfMonth(ConvertToQlDate(lastBusDate));
+										lastBusResult = QuantIO::ConvertToTm(lastBusResultQl);
 
 										calsInit++;
 									}
@@ -471,107 +478,120 @@ void QuantIOCalendars::DisplayContents() {
 
 									ImGui::Dummy(ImVec2(0.0f, 20.0f));
 
-									ImGui::TextDisabled("Holiday (non-business day)");
-									ImGui::Separator();
+									if (currentWeek.length() < 7) {
 
-									ImGui::Indent(40.0f);
+										ImGui::TextDisabled("Holiday (non-business day)");
+										ImGui::Separator();
 
-									ImGui::AlignTextToFramePadding();
-									ImGui::TextUnformatted("This date"); ImGui::SameLine();
-									ImGui::PushItemWidth(35.0f * 3.5f);
-									if (ImGui::DateChooser2("##Holiday", holDayDate, "%Y-%m-%d", false, NULL,
-										ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
-										holDay = mainCalendar.isHoliday(ConvertToQlDate(holDayDate));
-									}
-									if (!holDay) {
+										ImGui::Indent(40.0f);
+
+										ImGui::AlignTextToFramePadding();
+										ImGui::TextUnformatted("This date"); ImGui::SameLine();
+										ImGui::PushItemWidth(35.0f * 3.5f);
+										if (ImGui::DateChooser2("##Holiday", holDayDate, "%Y-%m-%d", false, NULL,
+											ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+											holDay = mainCalendar.isHoliday(ConvertToQlDate(holDayDate));
+										}
+										if (!holDay) {
+											ImGui::SameLine();
+											ImGui::TextUnformatted("is NOT a holiday");
+										}
+										else {
+											ImGui::SameLine();
+											ImGui::TextUnformatted("is a holiday");
+										}
+										ImGui::Unindent(40.0f);
+
+										ImGui::Dummy(ImVec2(0.0f, 20.0f));
+
+										ImGui::TextDisabled("Is End of the month");
+										ImGui::Separator();
+
+										ImGui::Indent(40.0f);
+
+										ImGui::AlignTextToFramePadding();
+										ImGui::TextUnformatted("This date"); ImGui::SameLine();
+										ImGui::PushItemWidth(35.0f * 3.5f);
+										if (ImGui::DateChooser2("##EndofMonth", lastMonDate, "%Y-%m-%d", false, NULL,
+											ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+											lastMon = mainCalendar.isEndOfMonth(ConvertToQlDate(lastMonDate));
+										}
+										if (!lastMon) {
+											ImGui::SameLine();
+											ImGui::TextUnformatted("is NOT at the end of the month");
+										}
+										else {
+											ImGui::SameLine();
+											ImGui::TextUnformatted("is at the end of the month");
+										}
+										ImGui::Unindent(40.0f);
+
+										ImGui::Dummy(ImVec2(0.0f, 20.0f));
+
+										ImGui::TextDisabled("Last Business Day of the month");
+										ImGui::Separator();
+
+										ImGui::Indent(40.0f);
+
+										ImGui::AlignTextToFramePadding();
+										ImGui::TextUnformatted("The last business day of the month for this date");
 										ImGui::SameLine();
-										ImGui::TextUnformatted("is NOT a holiday");
-									}
-									else {
+										ImGui::PushItemWidth(35.0f * 3.5f);
+										if (ImGui::DateChooser2("##LastBusinessDate", lastBusDate, "%Y-%m-%d", false, NULL,
+											ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+											lastBusResultQl = mainCalendar.endOfMonth(ConvertToQlDate(lastBusDate));
+											lastBusResult = QuantIO::ConvertToTm(lastBusResultQl);
+										}
 										ImGui::SameLine();
-										ImGui::TextUnformatted("is a holiday");
-									}
-									ImGui::Unindent(40.0f);
-
-									ImGui::Dummy(ImVec2(0.0f, 20.0f));
-
-									ImGui::TextDisabled("Is End of the month");
-									ImGui::Separator();
-
-									ImGui::Indent(40.0f);
-
-									ImGui::AlignTextToFramePadding();
-									ImGui::TextUnformatted("This date"); ImGui::SameLine();
-									ImGui::PushItemWidth(35.0f * 3.5f);
-									if (ImGui::DateChooser2("##EndofMonth", lastMonDate, "%Y-%m-%d", false, NULL,
-										ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
-										lastMon = mainCalendar.isEndOfMonth(ConvertToQlDate(lastMonDate));
-									}
-									if (!lastMon) {
+										ImGui::TextUnformatted("is");
 										ImGui::SameLine();
-										ImGui::TextUnformatted("is NOT at the end of the month");
-									}
-									else {
+										sprintf(lastBusResultOut, "%04d-%02d-%02d",
+											lastBusResult.tm_year + 1900, lastBusResult.tm_mon + 1, lastBusResult.tm_mday);
+										ImGui::InputText("##LastBusinessDateResult", lastBusResultOut, 10,
+											ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
+										ImGui::Unindent(40.0f);
+
+										ImGui::Dummy(ImVec2(0.0f, 20.0f));
+
+										ImGui::TextDisabled("Adjust");
+										ImGui::Separator();
+
+										static tm Date7 = QuantIO::CreateDateNow();
+
+										ImGui::Indent(40.0f);
+
+										ImGui::AlignTextToFramePadding();
+										ImGui::TextUnformatted("Adjusting this date");
 										ImGui::SameLine();
-										ImGui::TextUnformatted("is at the end of the month");
+										ImGui::PushItemWidth(35.0f * 3.5f);
+										if (ImGui::DateChooser2("##adjust", Date7, "%Y-%m-%d", false, NULL,
+											ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+										}
+										ImGui::SameLine();
+										ImGui::TextUnformatted("using the ... convention gives this date");
+
+										ImGui::Unindent(40.0f);
+
+										ImGui::Dummy(ImVec2(0.0f, 20.0f));
+										ImGui::TextDisabled("Advance");
+										ImGui::Separator();
+
+										static tm Date8 = QuantIO::CreateDateNow();
+
+										ImGui::Indent(40.0f);
+
+										ImGui::AlignTextToFramePadding();
+										ImGui::TextUnformatted("Advancing this date");
+										ImGui::SameLine();
+										ImGui::PushItemWidth(35.0f * 3.5f);
+										if (ImGui::DateChooser2("##advance", Date8, "%Y-%m-%d", false, NULL,
+											ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+										}
+										ImGui::SameLine();
+										ImGui::TextUnformatted("by ... days using the ... convention gives this date");
+
+										ImGui::Unindent(40.0f);
 									}
-									ImGui::Unindent(40.0f);
-
-									ImGui::Dummy(ImVec2(0.0f, 20.0f));
-
-									ImGui::TextDisabled("Last Business Day of the month");
-									ImGui::Separator();
-
-									static tm Date6 = QuantIO::CreateDateNow();
-
-									ImGui::Indent(40.0f);
-
-									ImGui::AlignTextToFramePadding();
-									ImGui::TextUnformatted("The last business day of the month for this date"); ImGui::SameLine();
-									ImGui::PushItemWidth(35.0f * 3.5f);
-									if (ImGui::DateChooser2("##LastBusinessDate", Date6, "%Y-%m-%d", false, NULL,
-										ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
-									}
-									ImGui::SameLine();
-									ImGui::TextUnformatted("is");
-									ImGui::SameLine();
-									ImGui::InputText("###LastBusinessDay", (char*)"22", 4,
-										ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
-									ImGui::Unindent(40.0f);
-
-									ImGui::Dummy(ImVec2(0.0f, 20.0f));
-
-									ImGui::TextDisabled("Adjust");
-									ImGui::Separator();
-
-									static tm Date7 = QuantIO::CreateDateNow();
-
-									ImGui::Indent(40.0f);
-
-
-									
-									ImGui::PushItemWidth(35.0f * 3.5f);
-									if (ImGui::DateChooser2("##adjust", Date7, "%Y-%m-%d", false, NULL,
-										ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
-									}
-									
-									ImGui::Unindent(40.0f);
-
-									ImGui::Dummy(ImVec2(0.0f, 20.0f));
-									ImGui::TextDisabled("Advance");
-									ImGui::Separator();
-
-									static tm Date8 = QuantIO::CreateDateNow();
-
-									ImGui::Indent(40.0f);
-
-
-									ImGui::PushItemWidth(35.0f * 3.5f);
-									if (ImGui::DateChooser2("##advance", Date8, "%Y-%m-%d", false, NULL,
-										ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
-									}
-
-									ImGui::Unindent(40.0f);
 
 									ImGui::Spacing();
 								}
@@ -1236,12 +1256,12 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 		else {
 			filteredholidays = holidays;
 		}
-		if (ImGui::BeginTable("CalendarHolidays", 2, QuantIO::tableFlags,
+		if (ImGui::BeginTable("CalendarHolidays", 2, QuantIO::tableFlags | ImGuiTableFlags_ScrollX,
 			ImVec2(0.0f, 0.0f), 0.0f)) {
 			ImGui::TableSetupScrollFreeze(0, 1);
-			ImGui::TableSetupColumn("DATE", ImGuiTableColumnFlags_NoHide, 200.0f);
+			ImGui::TableSetupColumn("DATE", ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_WidthFixed, 200.0f);
 			//ImGui::TableSetupColumn(holidays[0][0].c_str(), ImGuiTableColumnFlags_NoHide, 0.0f);
-			ImGui::TableSetupColumn("HOLIDAY", ImGuiTableColumnFlags_NoHide, 400.0f);
+			ImGui::TableSetupColumn("HOLIDAY", ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_WidthFixed, 1500.0f);
 			//ImGui::TableSetupColumn(holidays[0][1].c_str(), ImGuiTableColumnFlags_NoHide, 0.0f);
 			ImGui::TableHeadersRow();
 
@@ -1319,3 +1339,9 @@ void CalendarAdhocHolidays(std::string& calendarId) {
 	}
 
 }
+
+//from datetime import date
+//import holidays
+//for n in range(1970, 2199, 1) :
+//	for date, name in sorted(holidays.UnitedKingdom(subdiv = 'UK', years = n).items()) :
+//		print('(' + str(44) + ",'" + str(date) + "'" + ',"' + name + '"),')

@@ -6,6 +6,8 @@
 #include <vector>
 #include <ql/time/calendars/all.hpp>
 #include <ql/time/calendar.hpp>
+#include <ql/time/daycounter.hpp>
+#include <ql/time/daycounters/all.hpp>
 #include <time.h>
 #include <map>
 
@@ -15,28 +17,10 @@ using namespace QuantLib;
 
 int main() {
 
-	std::string calendarName = "custom calendar";
-	std::string calendarWeekends = "17";
-	static ext::shared_ptr<CustomCalendar> customCalendar(new CustomCalendar(calendarName, calendarWeekends));
-	std::vector<std::string> holidays = { "2022-12-12",  "2022-12-16",  "2025-12-31" };
-	
-	customCalendar->addHolidays(holidays);
-	
-	std::cout << customCalendar->isBusinessDay(Date(12, Dec, 2022)) << "\n";
-	std::cout << customCalendar->isBusinessDay(Date(25, Dec, 2024)) << "\n";
-	std::cout << customCalendar->isBusinessDay(Date(31, Dec, 2025)) << "\n";
+	DayCounter dayCounter = ActualActual(ActualActual::ISDA);
+	Date::serial_type result = dayCounter.dayCount(Date(1, Jan, 2021), Date(31, Dec, 2021));
 
-	customCalendar->resetAddedAndRemovedHolidays();
-
-	std::cout << customCalendar->isBusinessDay(Date(12, Dec, 2022)) << "\n";
-	std::cout << customCalendar->isBusinessDay(Date(25, Dec, 2024)) << "\n";
-	std::cout << customCalendar->isBusinessDay(Date(31, Dec, 2025)) << "\n";
-
-	customCalendar->addHolidays(holidays);
-
-	std::cout << customCalendar->isBusinessDay(Date(12, Dec, 2022)) << "\n";
-	std::cout << customCalendar->isBusinessDay(Date(25, Dec, 2024)) << "\n";
-	std::cout << customCalendar->isBusinessDay(Date(31, Dec, 2025)) << "\n";
+	std::cout << result;
 
 	return 0;
 }

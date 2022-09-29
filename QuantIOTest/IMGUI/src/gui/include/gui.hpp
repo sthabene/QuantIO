@@ -124,6 +124,56 @@ namespace QuantIO {
 		return today;
 	};
 
+	static tm ConvertToTm(QuantLib::Date& date) {
+		int mday = date.dayOfMonth();
+		int year = date.year();
+		int mon = 1;
+
+		QuantLib::Month month = date.month();
+		switch (month) {
+		case QuantLib::Month::January:
+			mon = 1;
+			break;
+		case QuantLib::Month::February:
+			mon = 2;
+			break;
+		case QuantLib::Month::March:
+			mon = 3;
+			break;
+		case QuantLib::Month::April:
+			mon = 4;
+			break;
+		case QuantLib::Month::May:
+			mon = 5;
+			break;
+		case QuantLib::Month::June:
+			mon = 6;
+			break;
+		case QuantLib::Month::July:
+			mon = 7;
+			break;
+		case QuantLib::Month::August:
+			mon = 8;
+			break;
+		case QuantLib::Month::September:
+			mon = 9;
+			break;
+		case QuantLib::Month::October:
+			mon = 10;
+			break;
+		case QuantLib::Month::November:
+			mon = 11;
+			break;
+		case QuantLib::Month::December:
+			mon = 12;
+			break;
+		default:
+			mon = 1;
+			break;
+		}
+		return CreateDate(mday, mon, year);
+	};
+
 	///Filtering
 	struct NumericFilter {
 		static int Filter(ImGuiInputTextCallbackData* data) {
