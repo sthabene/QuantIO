@@ -1222,10 +1222,30 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 		static tm today = *localtime(&now);
 
 		//Calendar holidays list
-		ImGui::RadioButton("This year", &holidaysToShow, 3); ImGui::SameLine();
-		//ImGui::RadioButton("Past year", &holidaysToShow, 1); ImGui::SameLine();
-		ImGui::RadioButton("Next year", &holidaysToShow, 2); ImGui::SameLine();
-		ImGui::RadioButton("Next 5yrs", &holidaysToShow, 0);
+		if (ImGui::RadioButton(std::to_string(1900 + today.tm_year - 1).c_str(), &holidaysToShow, 1)) {
+			static int year = (1900 + today.tm_year - 1) < 1970 ? 1970 : (1900 + today.tm_year - 1);
+			boost::format holQuery2 = boost::format("SELECT DATE, HOLIDAY_DESC FROM HOLIDAYS WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%2%-12-31') UNION SELECT DATE, HOLIDAY_DESC FROM HOLIDAYS_ADHOC WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%2%-12-31')") % calendarId % year;
+			holidays = QuantIO::dbConnection.getTableData2(holQuery2.str(), false);
+		}; 
+		ImGui::SameLine();
+		if (ImGui::RadioButton(std::to_string(1900 + today.tm_year).c_str(), &holidaysToShow, 3)) {
+			static int year = (1900 + today.tm_year) < 1970 ? 1970 : (1900 + today.tm_year);
+			boost::format holQuery1 = boost::format("SELECT DATE, HOLIDAY_DESC FROM HOLIDAYS WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%2%-12-31') UNION SELECT DATE, HOLIDAY_DESC FROM HOLIDAYS_ADHOC WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%2%-12-31')") % calendarId % year;
+			holidays = QuantIO::dbConnection.getTableData2(holQuery1.str(), false);
+		};	
+		ImGui::SameLine();
+		if (ImGui::RadioButton(std::to_string(1900 + today.tm_year + 1).c_str(), &holidaysToShow, 2)) {
+			static int year = (1900 + today.tm_year + 1) < 1970 ? 1970 : (1900 + today.tm_year + 1);
+			boost::format holQuery3 = boost::format("SELECT DATE, HOLIDAY_DESC FROM HOLIDAYS WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%2%-12-31') UNION SELECT DATE, HOLIDAY_DESC FROM HOLIDAYS_ADHOC WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%2%-12-31')") % calendarId % year;
+			holidays = QuantIO::dbConnection.getTableData2(holQuery3.str(), false);
+		}; 
+		ImGui::SameLine();
+		if (ImGui::RadioButton("Next 5yrs", &holidaysToShow, 0)) {
+			static int year1 = (1900 + today.tm_year + 2) < 1970 ? 1970 : (1900 + today.tm_year + 2);
+			static int year2 = (1900 + today.tm_year + 7) < 1970 ? 1970 : (1900 + today.tm_year + 7);
+			boost::format holQuery3 = boost::format("SELECT DATE, HOLIDAY_DESC FROM HOLIDAYS WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%3%-12-31') UNION SELECT DATE, HOLIDAY_DESC FROM HOLIDAYS_ADHOC WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%3%-12-31')") % calendarId % year1 % year2;
+			holidays = QuantIO::dbConnection.getTableData2(holQuery3.str(), false);
+		};
 
 		ImGui::Separator();
 

@@ -156,10 +156,12 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\time\calendar.cpp" />
+    <ClCompile Include="src\time\daycounter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\QUANTLIB.h" />
     <ClInclude Include="src\time\calendar.hpp" />
+    <ClInclude Include="src\time\daycounter.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

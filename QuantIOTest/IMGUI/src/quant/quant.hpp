@@ -25,6 +25,6 @@ void CalendarAdhocHolidays(std::string& calendarId);
 //Day counters
 class QuantIODayCounters : public QuantIO::Window {
 public:
-	QuantIODayCounters() : Window("Day Counters", "Time", false) { };
+	QuantIODayCounters() : Window("Day Counters", "Time", true) { };
 	void DisplayContents() override;
 };
