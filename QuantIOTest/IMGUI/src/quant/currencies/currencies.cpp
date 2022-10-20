@@ -229,13 +229,9 @@ void QuantIOCurrency::DisplayContents() {
 
 						};
 						ImGui::Separator();
-						if (ImGui::BeginMenu("Delete")) {
-							if (ImGui::MenuItem("Logical Delete", "Del")) {
-								openDeletePopup = true;
-							};
-							ImGui::MenuItem("Physical Delete", "Shift + Del");
-							ImGui::EndMenu();
-						}
+						if (ImGui::MenuItem("Delete", "Del")) {
+							openDeletePopup = true;
+						};
 						ImGui::Separator();
 						if (ImGui::MenuItem("Exit", "Esc")) {
 							openExitPopup = true;
@@ -276,7 +272,7 @@ void QuantIOCurrency::DisplayContents() {
 					ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, 
 						ImVec2(0.5f, 0.5f));
 					if (ImGui::BeginPopupModal("Exit", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-						ImGui::Text("Close and save changes?");
+						ImGui::Text("Close current tab?");
 						ImGui::Separator();
 
 						static bool askAgain = false;

@@ -12,7 +12,7 @@
 #include "boost/regex.hpp"
 #include "time/calendar.hpp"
 
-
+//https://github.com/ocornut/imgui/issues/331
 
 static std::string query = "SELECT CALENDAR_ID, CALENDAR_LABEL, REGION, MARKET FROM CALENDAR ORDER BY REGION, CALENDAR_LABEL";
 static std::string title = "Calendar###";
@@ -185,6 +185,7 @@ void QuantIOCalendars::DisplayContents() {
 							adhocHolidaysInMonthInit = 1;
 							holidaysToShow = 3;
 							openOpenPopup = true;
+
 						};
 
 						if (ImGui::MenuItem("Edit", "Ctrl + Enter")) {
@@ -216,13 +217,9 @@ void QuantIOCalendars::DisplayContents() {
 
 						};
 						ImGui::Separator();
-						if (ImGui::BeginMenu("Delete")) {
-							if (ImGui::MenuItem("Logical Delete", "Del")) {
-								openDeletePopup = true;
-							};
-							ImGui::MenuItem("Physical Delete", "Shift + Del");
-							ImGui::EndMenu();
-						}
+						if (ImGui::MenuItem("Delete", "Del")) {
+							openDeletePopup = true;
+						};
 						ImGui::Separator();
 						if (ImGui::MenuItem("Exit", "Esc")) {
 							openExitPopup = true;
@@ -240,7 +237,6 @@ void QuantIOCalendars::DisplayContents() {
 					else {
 						tabItemFlag = ImGuiTabItemFlags_None;
 					}
-
 
 					ImGui::SetNextWindowPos(QuantIO::popupLocation(), ImGuiCond_Appearing, ImVec2(0.0f, 0.0f));
 					ImGui::SetNextWindowSize(ImVec2(1000, 1050), ImGuiCond_FirstUseEver);
@@ -425,7 +421,6 @@ void QuantIOCalendars::DisplayContents() {
 
 										numBusinessDays = mainCalendar.businessDaysBetween(from, to, includeFirst, includeLast);
 										
-										printf("%s\n", mainCalendar.name().c_str());
 									}
 									ImGui::SameLine();
 									ImGui::TextUnformatted("is");
@@ -608,6 +603,7 @@ void QuantIOCalendars::DisplayContents() {
 						ImGui::Separator();
 						if (ImGui::Button("Close")) {
 							ImGui::CloseCurrentPopup();
+							openOpenPopup = false;
 							calsInit = 1;
 							mainCalendar.resetAddedAndRemovedHolidays();
 						}
@@ -616,6 +612,7 @@ void QuantIOCalendars::DisplayContents() {
 							ImGui::SameLine(ImGui::CalcTextSize("Close").x + 30.0f);
 							if (ImGui::Button("Save")) {
 								ImGui::CloseCurrentPopup();
+								openOpenPopup = false;
 								calsInit = 1;
 								mainCalendar.resetAddedAndRemovedHolidays();
 							}
@@ -1317,7 +1314,7 @@ void CalendarAdhocHolidays(std::string& calendarId) {
 
 
 		if (adhocHolidaysInMonthInit & 1) {
-			boost::format adhoHholInMonthQuery = boost::format("SELECT DATE, HOLIDAY_DESC FROM HOLIDAYS_ADHOC WHERE CALENDAR = %1%") % calendarId;
+			boost::format adhoHholInMonthQuery = boost::format("SELECT DATE, HOLIDAY_DESC FROM HOLIDAYS_ADHOC WHERE CALENDAR = %1% ORDER BY DATE ASC" ) % calendarId;
 			adhocHolidays = QuantIO::dbConnection.getTableData2(adhoHholInMonthQuery.str(), false);
 			adhocHolidaysInMonthInit++;
 		}
