@@ -27,4 +27,8 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="src\testing.lua" />
+    <None Include="src\colors.lua" />
+  </ItemGroup>
 </Project>
