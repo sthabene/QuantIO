@@ -1250,9 +1250,11 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 		int yearsInit = show == 0 ? 1980 : (show == 1 ? 1980 : today.tm_year + 1900);*/
 
 		static ImGuiTextFilter filter;
-		filter.Draw("Filter", ImGui::GetFontSize() * 18);
-		ImGui::SameLine();
-		HelpMarker("Use , for OR, - for NOT");
+		if (holidays.size() > 0) {
+			filter.Draw("Filter", ImGui::GetFontSize() * 18);
+			ImGui::SameLine();
+			HelpMarker("Use , for OR, - for NOT");
+		}
 
 
 		if (holidayListInit & 1) {

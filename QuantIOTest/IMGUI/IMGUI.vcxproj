@@ -100,13 +100,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_MBCS;%(PreprocessorDefinitions);PROJECT_DIR=R"($(ProjectDir))"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)vendor\utfcpp\source;$(SolutionDir)vendor\quantlib\;$(SolutionDir)vendor\boost\;$(ProjectDir)src\quant\;$(ProjectDir)src\connector\include\;$(ProjectDir)src\gui\include\;$(SolutionDir)vendor\sqlite\;$(SolutionDir)vendor\imgui\;$(SolutionDir)vendor\imgui\backends;$(SolutionDir)vendor\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)vendor\lua\include;$(SolutionDir)vendor\utfcpp\source;$(SolutionDir)vendor\quantlib\;$(SolutionDir)vendor\boost\;$(ProjectDir)src\quant\;$(ProjectDir)src\connector\include\;$(ProjectDir)src\gui\include\;$(SolutionDir)vendor\sqlite\;$(SolutionDir)vendor\imgui\;$(SolutionDir)vendor\imgui\backends;$(SolutionDir)vendor\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>QuantLib-mt-gd.lib;sqlite3.lib;opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)vendor\glfw\lib-vc2022;$(SolutionDir)vendor\sqlite\;$(SolutionDir)vendor\quantlib\lib\;$(SolutionDir)vendor\boost\stage\lib;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>liblua54.a;QuantLib-mt-gd.lib;sqlite3.lib;opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)vendor\lua;$(SolutionDir)vendor\glfw\lib-vc2022;$(SolutionDir)vendor\sqlite\;$(SolutionDir)vendor\quantlib\lib\;$(SolutionDir)vendor\boost\stage\lib;</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>msvcrt.lib</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>

@@ -4,6 +4,11 @@
 #include "boost/algorithm/string.hpp"
 #include "boost/format.hpp"
 
+extern "C" {
+#include "lua.h"
+#include "lualib.h"
+#include "lauxlib.h"
+}
 
 static std::string query = "SELECT COUNTER_ID, COUNTER_NAME, COUNTER_DESCR FROM DAY_COUNTER ORDER BY COUNTER_NAME";
 static std::string title = "DayCounter###";
@@ -230,277 +235,123 @@ void QuantIODayCounters::DisplayContents() {
 						ImGui::SameLine(0.0f, 20.0f);
 						HelpMarker("Whether to include the last day in the calculation");
 
+						ImGui::Dummy(ImVec2(0.0f, 5.0f));
+						ImGui::SetCursorPosX(500.0f - (ImGui::CalcTextSize("Year Fraction XXX").x * 0.5f + 40.0f));
+
+						const char * yearFrac = "365";
+						ImGui::PushItemWidth(ImGui::CalcTextSize("X").x * 4.0f);
+						ImGui::InputText("Year Fraction", (char*)yearFrac, 8,
+							ImGuiInputTextFlags_AutoSelectAll);
+						ImGui::PopItemWidth();
+						ImGui::SameLine(0.0f, 20.0f);
+						HelpMarker("Number of days to use as denominator");
 						ImGui::Dummy(ImVec2(0.0f, 15.0f));
 
 						ImGui::Separator();
 
-						ImGui::Dummy(ImVec2(0.0f, 15.0f));
+						//ImGui::Dummy(ImVec2(0.0f, 15.0f));
 
-						const char* availableFields[] = { "Day 1", "Day 2", "Month 1", "Month 2", "Year 1", 
-							"Year 2", "Date 1", "Date 2"};
-						const char* availableFunctions[] = { "$if(bool, value, value)", "$isLastOfFebruary(day, month, year)", 
-						"$daysBetween(date, date)", "$equal(value, value)"};
+						const char* availableFields[] = { "Day1", "Day2", "Month1", "Month2", "Year1", 
+							"Year2", "Date1", "Date2"};
+						const char* availableFunctions[] = {
+							"isLastOfFebruary(day, month, year)", 
+							"daysBetween(date, date)",
+							"businessDaysBetween(date, date)"};
 
-						//Selection details
-						const char* dayCountObjects[] = { "###Empty", "Day 1", "Day 2", "Month 1", "Month 2", "Year 1",
-							"Year 2", "Date 1", "Date 2", "Result"};
-						
-						static std::vector<int> selectedIndex;
-						static std::vector<int> selectedItemValues = { 1, 2, 1, 2, 6, 4, 4, 6, 8, 7, 9 };
+						static std::string function = "if (Day1 == 31) then Day1 = 30 end \n"
+							"if (Day2 == 31 and Day1 == 30) then Day2 = 30 end \n"
+							"return 360 * (Year2 - Year1) + 30 * (Month2 - Month1) + (Day2 - Day1) end";
 
-						ImGui::BeginChild("##DayCountDetails", ImVec2(0, 500), false, ImGuiWindowFlags_AlwaysAutoResize);
-						{
-							if (ImGui::BeginTable("DayCountersDetails", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchSame | ImGuiTableFlags_ContextMenuInBody, 
-								ImVec2(0.0f, 0.0f), 0.0f)) {
-								ImGui::TableSetupScrollFreeze(0, 1);
-								ImGui::TableSetupColumn("Field", ImGuiTableColumnFlags_NoHide, 20.0f);
-								ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_NoHide, 40.0f);
-								ImGui::TableSetupColumn("Condition", ImGuiTableColumnFlags_NoHide, 40.0f);
+						if (ImGui::BeginTabBar("DayCounterTabBar", ImGuiTabBarFlags_None)) {
 
-								ImGui::TableHeadersRow();
+							if (ImGui::BeginTabItem("Formula", NULL, tabItemFlag)) {
+								ImGui::BeginChild("##DayCountDetails", ImVec2(0, 500), false, ImGuiWindowFlags_AlwaysAutoResize);
+								{
 
-								for (int row_n = 0; row_n < selectedItemValues.size(); row_n++) {
-
-									ImGui::PushID(row_n + 300);
-
-									ImGui::TableNextRow(ImGuiTableRowFlags_None, rowHeight);
+									ImGui::BeginChild("##EditLeft",
+										ImVec2(ImGui::GetContentRegionAvail().x * 0.7f, -1.5f * buttonSz.y), false,
+										ImGuiWindowFlags_HorizontalScrollbar);
+									{
 
 
-									if (ImGui::TableSetColumnIndex(0)) {
-										char label[32];
-										sprintf(label, "%04d", row_n);
+										if (ImGui::InputTextMultiline("##Code", (char*)function.c_str(),
+											1024 * 16, ImVec2(-FLT_MIN, -FLT_MIN), ImGuiInputTextFlags_AllowTabInput)) {
 
-										//ImGui::Button(label, ImVec2(-FLT_MIN, 0.0f));
-										ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
+										}
+
+									}
+									ImGui::EndChild();
+									ImGui::SameLine(0.0f, 1.0f);
+									ImGui::BeginChild("##EditRight", ImVec2(0.0f, -1.5f * buttonSz.y), true,
+										ImGuiWindowFlags_HorizontalScrollbar);
+									{
+										static int inputOpt = 1;
 										ImGui::PushItemWidth(-FLT_MIN);
-
-										int ivalue = row_n >= selectedItemValues.size() ? 0 : selectedItemValues[row_n];
-
-										if (ImGui::BeginCombo("##Combo", dayCountObjects[ivalue],
-											ImGuiComboFlags_NoArrowButton)) {
-											for (int n = 0; n < IM_ARRAYSIZE(dayCountObjects); n++) {
-												const bool isSelected = (ivalue == n);
-												if (ImGui::Selectable(dayCountObjects[n], isSelected)) {
-													ivalue = n;
-													selectedItemValues[row_n] = n;
-												}
-												if (isSelected) {
-													ImGui::SetItemDefaultFocus();
-												}
-											}
-											ImGui::EndCombo();
-										}
+										ImGui::Combo("##InputOp", &inputOpt, "Functions\0Fields\0");
 										ImGui::PopItemWidth();
-										ImGui::PopStyleVar();
+										ImGui::Separator();
 
-									};
+										if (inputOpt == 0) {
+											for (int i = 0; i < IM_ARRAYSIZE(availableFunctions); i++) {
+												static bool selection = false;
+												if (ImGui::Selectable(availableFunctions[i], selection)) {
 
-									if (ImGui::TableSetColumnIndex(1)) {
-										static char value[8];
-										ImGui::PushItemWidth(-FLT_MIN-31.0f);
-										ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
-										ImGui::InputText("##value", value, 8, ImGuiInputTextFlags_AutoSelectAll);
-										ImGui::PopItemWidth();
-										ImGui::SameLine(0.0f, 1.0f);
-										ImGui::PushID(1235);
-										if (ImGui::Button("...", ImVec2(30.0f, buttonSz.y))) {
-											ImGui::OpenPopup("EditModal");
+												}
+											}
 										}
-
-
-										ImGui::SetNextWindowPos(QuantIO::popupLocation(ImGui::GetWindowPos(), (float)row_n),
-											ImGuiCond_Appearing,
-											ImVec2(0.0f, 0.0f));
-										ImGui::SetNextWindowSize(ImVec2(1000, 500), ImGuiCond_FirstUseEver);
-
-										if (ImGui::BeginPopupModal("EditModal", NULL,
-											ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings |
-											ImGuiWindowFlags_NoTitleBar)) {
-
-											ImGui::BeginChild("##EditLeft",
-												ImVec2(ImGui::GetContentRegionAvail().x * 0.7f, -1.5f * buttonSz.y), false,
-												ImGuiWindowFlags_AlwaysAutoResize);
-											{
-												static char InputBuf[1024 * 16] = { '\0' };
-												if (ImGui::InputTextMultiline("##source", InputBuf, IM_ARRAYSIZE(InputBuf),
-													ImVec2(-FLT_MIN, -FLT_MIN))) {
+										else {
+											for (int i = 0; i < IM_ARRAYSIZE(availableFields); i++) {
+												static bool selection = false;
+												if (ImGui::Selectable(availableFields[i], selection)) {
 
 												}
 											}
-											ImGui::EndChild();
-											ImGui::SameLine(0.0f, 1.0f);
-											ImGui::BeginChild("##EditRight", ImVec2(0.0f, -1.5f * buttonSz.y), true,
-												ImGuiWindowFlags_HorizontalScrollbar);
-											{
-												static int inputOpt = 0;
-												ImGui::PushItemWidth(-FLT_MIN);
-												ImGui::Combo("##InputOp", &inputOpt, "Functions\0Fields\0");
-												ImGui::PopItemWidth();
-												ImGui::Separator();
-
-												if (inputOpt == 0) {
-													for (int i = 0; i < IM_ARRAYSIZE(availableFunctions); i++) {
-														static bool selection = false;
-														if (ImGui::Selectable(availableFunctions[i], selection)) {
-
-														}
-
-													}
-
-												}
-												else {
-													for (int i = 0; i < IM_ARRAYSIZE(availableFields); i++) {
-														static bool selection = false;
-														if (ImGui::Selectable(availableFields[i], selection)) {
-
-														}
-
-													}
-												}
-
-
-											}
-
-											ImGui::EndChild();
-
-											//ImGui::SetCursorPosY(500 - 1.5f * buttonSz.y);
-
-											ImGui::Separator();
-											if (ImGui::Button("Close")) {
-												ImGui::CloseCurrentPopup();
-											}
-
-											if (popupInputFlags == ImGuiInputTextFlags_None) {
-												ImGui::SameLine(ImGui::CalcTextSize("Close").x + 30.0f);
-												if (ImGui::Button("Save")) {
-													ImGui::CloseCurrentPopup();
-												}
-											}
-
-
-											ImGui::EndPopup();
 										}
-										ImGui::PopID();
-										ImGui::PopStyleVar();
 									}
-
-									
-									if (ImGui::TableSetColumnIndex(2)) {
-										static char formula[255];
-										ImGui::PushItemWidth(-FLT_MIN-93.0f);
-										ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
-										ImGui::InputText("##Formula", formula, 255, ImGuiInputTextFlags_AutoSelectAll);
-										ImGui::PopStyleVar();
-										ImGui::PopItemWidth();
-										ImGui::SameLine(0.0f, 0.0f);
-										ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
-										ImGui::SameLine(0.0f, 1.0f);
-										if (ImGui::Button("-", ImVec2(30.0f, buttonSz.y))) {
-											selectedItemValues.erase(selectedItemValues.begin() + row_n);
-										}
-										ImGui::SameLine(0.0f, 1.0f);
-										if (ImGui::Button("+", ImVec2(30.0f, buttonSz.y))) {
-											selectedItemValues.insert(selectedItemValues.begin() + row_n + 1, 0);
-										}
-										ImGui::SameLine(0.0f, 1.0f);
-										ImGui::PushID(1234);
-										if (ImGui::Button("...", ImVec2(30.0f, buttonSz.y))) {
-											ImGui::OpenPopup("EditModal");
-										}
+									ImGui::EndChild();
+									static std::string status = "";
+									if (ImGui::Button("Validate")) {
 										
 
-										ImGui::SetNextWindowPos(QuantIO::popupLocation(ImGui::GetWindowPos(), (float)row_n),
-											ImGuiCond_Appearing,
-											ImVec2(0.0f, 0.0f));
-										ImGui::SetNextWindowSize(ImVec2(1000, 500), ImGuiCond_FirstUseEver);
+										static std::string header = 
+											"function dayCount (Day1, Day2, Month1, Month2, Year1, Year2, Date1, Date2) ";
 
-										if (ImGui::BeginPopupModal("EditModal", NULL,
-											ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings |
-											ImGuiWindowFlags_NoTitleBar)) {
+										static std::string footer = ";r = dayCount(31, 30, 1, 1, 2021, 2023)";
 
-											ImGui::BeginChild("##EditLeft",
-												ImVec2(ImGui::GetContentRegionAvail().x * 0.7f, -1.5f * buttonSz.y), false,
-												ImGuiWindowFlags_AlwaysAutoResize);
-											{
-												static char InputBuf[1024 * 16] = { '\0' };
-												if (ImGui::InputTextMultiline("##source", InputBuf, IM_ARRAYSIZE(InputBuf),
-													ImVec2(-FLT_MIN, -FLT_MIN))) {
+										std::string functionFinal = header + function + footer;
 
-												}
-											}
-											ImGui::EndChild();
-											ImGui::SameLine(0.0f, 1.0f);
-											ImGui::BeginChild("##EditRight", ImVec2(0.0f, -1.5f * buttonSz.y), true,
-												ImGuiWindowFlags_HorizontalScrollbar);
-											{
-												static int inputOpt = 0;
-												ImGui::PushItemWidth(-FLT_MIN);
-												ImGui::Combo("##InputOp", &inputOpt, "Functions\0Fields\0");
-												ImGui::PopItemWidth();
-												ImGui::Separator();
+										printf("%s\n", functionFinal.c_str());
 
-												if (inputOpt == 0) {
-													for (int i = 0; i < IM_ARRAYSIZE(availableFunctions); i++) {
-														static bool selection = false;
-														if (ImGui::Selectable(availableFunctions[i], selection)) {
+										lua_State* L = luaL_newstate(); //We need to start a lua virtual machine
+										luaL_openlibs(L); //Opens a set of libraries that a typical prgram will use
 
-														}
-
-													}
-
-												}
-												else {
-													for (int i = 0; i < IM_ARRAYSIZE(availableFields); i++) {
-														static bool selection = false;
-														if (ImGui::Selectable(availableFields[i], selection)) {
-
-														}
-
-													}
-												}
-
-
-											}
-											
-											ImGui::EndChild();
-
-											//ImGui::SetCursorPosY(500 - 1.5f * buttonSz.y);
-
-											ImGui::Separator();
-											if (ImGui::Button("Close")) {
-												ImGui::CloseCurrentPopup();
-											}
-
-											if (popupInputFlags == ImGuiInputTextFlags_None) {
-												ImGui::SameLine(ImGui::CalcTextSize("Close").x + 30.0f);
-												if (ImGui::Button("Save")) {
-													ImGui::CloseCurrentPopup();
-												}
-											}
-
-
-											ImGui::EndPopup();
+										if (luaL_dostring(L, functionFinal.c_str()) == LUA_OK) {
+											lua_getglobal(L, "r"); /* function to be called */
+											lua_tonumber(L, -1);
+											printf("%f\n", lua_tonumber(L, -1));
+											status = "No error";
 										}
-										ImGui::PopID();
+										else {
+											status = lua_tostring(L, -1);
+										}
+										lua_close(L);
 										
-										ImGui::PopStyleVar();
-									};
-
-									if (ImGui::BeginPopupContextItem("DayCountContextPopup")) {
-										if (ImGui::MenuItem("Delete", NULL)) {
-											selectedItemValues.pop_back();
-										}
-										ImGui::EndPopup();
 									}
-
-									ImGui::PopID();
-
+									ImGui::SameLine();
+									ImGui::Text(status.c_str());
 								}
-
-								ImGui::EndTable();
+								ImGui::EndChild();
+								ImGui::Spacing();
+								ImGui::EndTabItem();
 							}
+							if (ImGui::BeginTabItem("Test", NULL)) {
+								ImGui::Spacing();
+								
+								ImGui::Spacing();
+								ImGui::EndTabItem();
+							}
+							ImGui::EndTabBar();
 						}
-						ImGui::EndChild();
 
 						ImGui::SetCursorPosY(1050 - 1.5f * buttonSz.y);
 
