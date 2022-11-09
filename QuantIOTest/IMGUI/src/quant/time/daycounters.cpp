@@ -1,14 +1,9 @@
+#pragma once
 #include "../quant.hpp"
 #include "time/daycounter.hpp"
 
 #include "boost/algorithm/string.hpp"
 #include "boost/format.hpp"
-
-extern "C" {
-#include "lua.h"
-#include "lualib.h"
-#include "lauxlib.h"
-}
 
 static std::string query = "SELECT COUNTER_ID, COUNTER_NAME, COUNTER_DESCR FROM DAY_COUNTER ORDER BY COUNTER_NAME";
 static std::string title = "DayCounter###";
@@ -20,13 +15,21 @@ static bool showFilter = false;
 static std::vector<std::string> selectedRow;
 static ImGuiInputTextFlags popupInputFlags = ImGuiInputTextFlags_None;
 static ImGuiTabItemFlags tabItemFlag = ImGuiTabItemFlags_None;
-
+static bool includeLast;
+static std::string yearFracStatus = "";
+static std::string dayFuncStatus = "";
 
 //Day counter items
+float dayCountWidth = 0.f;
 
+//QuantLib
+CustomDayCounter mainDayCounter;
+static int calsInit = 1;
 
-//IMGUI 
+//IMGUI Display
 static ImVec2 buttonSz(25.0f * 5.0f, 32.0f); //To change 
+static unsigned int iRows = 0;
+static unsigned int iColumns = 0;
 
 void QuantIODayCounters::DisplayContents() {
 	ImGui::BeginChild("DayCounters", ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysAutoResize);
@@ -36,12 +39,10 @@ void QuantIODayCounters::DisplayContents() {
 		//Running the query
 		if (refresh & 1) {
 			tableData = QuantIO::dbConnection.getTableData2(query);
+			iRows = tableData.size() - 1;
+			iColumns = tableData[0].size();
 			refresh++;
 		}
-
-		//#rows and columns
-		static int iRows = tableData.size() - 1;
-		static unsigned int iColumns = tableData[0].size();
 
 		//Filtering text field
 		static ImGuiTextFilter filter;
@@ -143,8 +144,13 @@ void QuantIODayCounters::DisplayContents() {
 						selections.push_back(currentRow->at(0));
 
 						if (ImGui::MenuItem("Open", "Enter")) {
-							boost::format openQuery = boost::format("SELECT COUNTER_ID, COUNTER_NAME, COUNTER_DESCR FROM DAY_COUNTER WHERE COUNTER_ID = %1%") % currentRow->at(0);
+							boost::format openQuery = boost::format("SELECT COUNTER_ID, COUNTER_NAME, COUNTER_DESCR, DAY_COUNT, YEAR_FRAC FROM DAY_COUNTER WHERE COUNTER_ID = %1%") % 
+								currentRow->at(0);
 							selectedRow = QuantIO::dbConnection.getTableData2(openQuery.str(), false, false)[0];
+
+							includeLast = false;
+							mainDayCounter.setAnotherDayCounter(selectedRow[1], includeLast, selectedRow[3],
+								selectedRow[4]);
 
 							openOpenPopup = true;
 						}
@@ -183,18 +189,21 @@ void QuantIODayCounters::DisplayContents() {
 						title = "Day Counter: Read-only mode";
 						ImGui::OpenPopup(title.c_str());
 						tabItemFlag = ImGuiTabItemFlags_SetSelected;
+
+						dayFuncStatus = "";
+						yearFracStatus = "";
 					}
 					else {
 						tabItemFlag = ImGuiTabItemFlags_None;
 					}
 
 					ImGui::SetNextWindowPos(QuantIO::popupLocation(), ImGuiCond_Appearing, ImVec2(0.0f, 0.0f));
-					ImGui::SetNextWindowSize(ImVec2(1000, 1050), ImGuiCond_FirstUseEver);
+					ImGui::SetNextWindowSize(ImVec2(1200, 1050), ImGuiCond_FirstUseEver);
 
 					if (ImGui::BeginPopupModal(title.c_str(), NULL, 
 						ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings)) {
 
-						ImGui::SetCursorPosX(900.0f);
+						ImGui::SetCursorPosX(1100.0f);
 						ImGui::PushItemWidth(ImGui::CalcTextSize(selectedRow[0].c_str()).x + 15.0f);
 						ImGui::InputText(" Id", (char*)selectedRow[0].c_str(), 4,
 							ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
@@ -205,7 +214,7 @@ void QuantIODayCounters::DisplayContents() {
 						float descrWidth = ImGui::CalcTextSize(selectedRow[2].c_str()).x > 1000 ? 1000 : 
 						ImGui::CalcTextSize(selectedRow[2].c_str()).x + 15.0f;
 
-						ImGui::SetCursorPosX(500.0f - (titleWidth + 50.0f) * 0.5f);
+						ImGui::SetCursorPosX(600.0f - (titleWidth + 50.0f) * 0.5f);
 						ImGui::PushItemWidth(titleWidth);
 						ImGui::InputText("##DayCounter", (char*)selectedRow[1].c_str(), 32,
 							ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
@@ -213,140 +222,354 @@ void QuantIODayCounters::DisplayContents() {
 
 
 						ImGui::Dummy(ImVec2(0.0f, 15.0f));
-						ImGui::SetCursorPosX(500.0f - (ImGui::CalcTextSize("Description").x + 50.0f) * 0.5f);
+						ImGui::SetCursorPosX(600.0f - (ImGui::CalcTextSize("Description").x + 50.0f) * 0.5f);
 						ImGui::TextDisabled("Description");
 
-						ImGui::SetCursorPosX(500.0f - (descrWidth + 50.0f) * 0.5f);
+						ImGui::SetCursorPosX(600.0f - (descrWidth + 50.0f) * 0.5f);
 						//ImGui::PushItemWidth(descrWidth);
 						ImGui::InputTextMultiline("##Description", (char*)selectedRow[2].c_str(), 255,
 							ImVec2(descrWidth, 35.0f),
 							ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
 						//ImGui::PopItemWidth();
-						ImGui::Dummy(ImVec2(0.0f, 15.0f));
+						/*ImGui::Dummy(ImVec2(0.0f, 15.0f));
 
 						ImGui::Separator();
 
 						ImGui::Dummy(ImVec2(0.0f, 15.0f));
 
-						ImGui::SetCursorPosX(500.0f - (ImGui::CalcTextSize("Include Last").x * 0.5f + 50.0f));
+						ImGui::SetCursorPosX(600.0f - (ImGui::CalcTextSize("Include Last").x * 0.5f + 50.0f));
 
-						bool includeLast = false;
-						ImGui::Checkbox("Include Last", &includeLast);
+						if (ImGui::Checkbox("Include Last", &includeLast)) {
+							if (includeLast) {
+								mainDayCounter.setAnotherDayCounter(selectedRow[1], includeLast, selectedRow[3],
+									selectedRow[4]);
+								calsInit++;
+							}
+							else {
+								mainDayCounter.setAnotherDayCounter(selectedRow[1], includeLast, selectedRow[3],
+									selectedRow[4]);
+								calsInit++;
+							}
+						};
+
 						ImGui::SameLine(0.0f, 20.0f);
-						HelpMarker("Whether to include the last day in the calculation");
+						HelpMarker("Whether to include the last day in the calculation");*/
 
-						ImGui::Dummy(ImVec2(0.0f, 5.0f));
-						ImGui::SetCursorPosX(500.0f - (ImGui::CalcTextSize("Year Fraction XXX").x * 0.5f + 40.0f));
+						/*ImGui::Dummy(ImVec2(0.0f, 5.0f));
+						ImGui::SetCursorPosX(600.0f - (ImGui::CalcTextSize("Year Fraction XXX").x * 0.5f + 40.0f));
 
-						const char * yearFrac = "365";
+						static std::string yearFrac = "365";
 						ImGui::PushItemWidth(ImGui::CalcTextSize("X").x * 4.0f);
-						ImGui::InputText("Year Fraction", (char*)yearFrac, 8,
+						ImGui::InputText("Year Fraction", (char*)yearFrac.c_str(), 8,
 							ImGuiInputTextFlags_AutoSelectAll);
 						ImGui::PopItemWidth();
 						ImGui::SameLine(0.0f, 20.0f);
-						HelpMarker("Number of days to use as denominator");
+						HelpMarker("Number of days to use as denominator");*/
 						ImGui::Dummy(ImVec2(0.0f, 15.0f));
 
 						ImGui::Separator();
 
 						//ImGui::Dummy(ImVec2(0.0f, 15.0f));
 
+						std::string dayCountfunction = selectedRow[3];
+						std::string yearFracfunction = selectedRow[4];
+
+						std::stringstream dayCountFuncStream(dayCountfunction);
+						std::stringstream yearFracFuncStream(yearFracfunction);						
+
+						if (openOpenPopup) {
+							size_t lenDayCount = 0;
+							std::string dayCountLongLine = "";
+							for (std::string line; std::getline(dayCountFuncStream, line, '\n');) {
+								size_t len = line.length();
+								if (len > lenDayCount) {
+									lenDayCount = len;
+									dayCountLongLine = line;
+								}
+							}
+							size_t lenYearFrac = 0;
+							for (std::string line; std::getline(yearFracFuncStream, line, '\n');) {
+								size_t len = line.length();
+								if (len > lenYearFrac) {
+									lenYearFrac = len;
+								}
+							}
+							dayCountWidth = ImGui::CalcTextSize(dayCountLongLine.c_str()).x + 30.0f;
+						}						
+
 						const char* availableFields[] = { "Day1", "Day2", "Month1", "Month2", "Year1", 
 							"Year2", "Date1", "Date2"};
-						const char* availableFunctions[] = {
-							"isLastOfFebruary(day, month, year)", 
-							"daysBetween(date, date)",
-							"businessDaysBetween(date, date)"};
-
-						static std::string function = "if (Day1 == 31) then Day1 = 30 end \n"
-							"if (Day2 == 31 and Day1 == 30) then Day2 = 30 end \n"
-							"return 360 * (Year2 - Year1) + 30 * (Month2 - Month1) + (Day2 - Day1) end";
+						const char* dayCountFunctions[] = {
+							"date (day, month, year)",
+							"isLastOfFebruary (day, month, year)",
+							"daysBetween (Day1, Day2, Month1, Month2, Year1, Year2)",
+							"businessDaysBetween (Day1, Day2, Month1, Month2, Year1, Year2)",
+							"dayCount (Day1, Day2, Month1, Month2, Year1, Year2)",
+							"yearFraction (Day1, Day2, Month1, Month2, Year1, Year2)" };
+						const char* yearFractionFunctions[] = {
+							"date (day, month, year)",
+							"isLastOfFebruary (day, month, year)",
+							"daysBetween (Day1, Day2, Month1, Month2, Year1, Year2)",
+							"businessDaysBetween (Day1, Day2, Month1, Month2, Year1, Year2)",
+							"dayCount (Day1, Day2, Month1, Month2, Year1, Year2)",
+							"yearFraction (Day1, Day2, Month1, Month2, Year1, Year2)"};
 
 						if (ImGui::BeginTabBar("DayCounterTabBar", ImGuiTabBarFlags_None)) {
 
 							if (ImGui::BeginTabItem("Formula", NULL, tabItemFlag)) {
-								ImGui::BeginChild("##DayCountDetails", ImVec2(0, 500), false, ImGuiWindowFlags_AlwaysAutoResize);
-								{
-
-									ImGui::BeginChild("##EditLeft",
-										ImVec2(ImGui::GetContentRegionAvail().x * 0.7f, -1.5f * buttonSz.y), false,
-										ImGuiWindowFlags_HorizontalScrollbar);
-									{
-
-
-										if (ImGui::InputTextMultiline("##Code", (char*)function.c_str(),
-											1024 * 16, ImVec2(-FLT_MIN, -FLT_MIN), ImGuiInputTextFlags_AllowTabInput)) {
-
-										}
-
-									}
-									ImGui::EndChild();
-									ImGui::SameLine(0.0f, 1.0f);
-									ImGui::BeginChild("##EditRight", ImVec2(0.0f, -1.5f * buttonSz.y), true,
-										ImGuiWindowFlags_HorizontalScrollbar);
-									{
-										static int inputOpt = 1;
-										ImGui::PushItemWidth(-FLT_MIN);
-										ImGui::Combo("##InputOp", &inputOpt, "Functions\0Fields\0");
-										ImGui::PopItemWidth();
-										ImGui::Separator();
-
-										if (inputOpt == 0) {
-											for (int i = 0; i < IM_ARRAYSIZE(availableFunctions); i++) {
-												static bool selection = false;
-												if (ImGui::Selectable(availableFunctions[i], selection)) {
-
-												}
-											}
-										}
-										else {
-											for (int i = 0; i < IM_ARRAYSIZE(availableFields); i++) {
-												static bool selection = false;
-												if (ImGui::Selectable(availableFields[i], selection)) {
-
-												}
-											}
+								static const char* configItems[] = { "Day Count", "Year Fraction" };
+								static int selected = 0;
+								{ //Left
+									ImGui::BeginChild("Left pane", ImVec2(150, -1.5f * buttonSz.y), true);
+									for (int i = 0; i < IM_ARRAYSIZE(configItems); i++) {
+										char label[32];
+										sprintf(label, configItems[i]);
+										if (ImGui::Selectable(label, selected == i)) {
+											selected = i;
 										}
 									}
 									ImGui::EndChild();
-									static std::string status = "";
-									if (ImGui::Button("Validate")) {
-										
-
-										static std::string header = 
-											"function dayCount (Day1, Day2, Month1, Month2, Year1, Year2, Date1, Date2) ";
-
-										static std::string footer = ";r = dayCount(31, 30, 1, 1, 2021, 2023)";
-
-										std::string functionFinal = header + function + footer;
-
-										printf("%s\n", functionFinal.c_str());
-
-										lua_State* L = luaL_newstate(); //We need to start a lua virtual machine
-										luaL_openlibs(L); //Opens a set of libraries that a typical prgram will use
-
-										if (luaL_dostring(L, functionFinal.c_str()) == LUA_OK) {
-											lua_getglobal(L, "r"); /* function to be called */
-											lua_tonumber(L, -1);
-											printf("%f\n", lua_tonumber(L, -1));
-											status = "No error";
-										}
-										else {
-											status = lua_tostring(L, -1);
-										}
-										lua_close(L);
-										
-									}
-									ImGui::SameLine();
-									ImGui::Text(status.c_str());
 								}
-								ImGui::EndChild();
-								ImGui::Spacing();
+								ImGui::SameLine();
+								{//Right
+									if (selected == 0) {
+										ImGui::BeginChild("##DayCount", ImVec2(0, 500), false,
+											ImGuiWindowFlags_AlwaysAutoResize);
+										{
+											float availableRegion = ImGui::GetContentRegionAvail().x * 0.75f;
+											ImGui::BeginChild("##DayCountLeft",
+												ImVec2(availableRegion, -1.5f * buttonSz.y),
+												false, ImGuiWindowFlags_HorizontalScrollbar);
+											{
+												ImGui::SetScrollY(ImGui::GetScrollMaxY());
+												if (ImGui::InputTextMultiline("##Code", (char*)selectedRow[3].c_str(),
+													1024 * 16, ImVec2(dayCountWidth > availableRegion ? 
+														dayCountWidth : availableRegion, -FLT_MIN),
+													ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_ReadOnly)) {
+												}
+											}
+											ImGui::EndChild();
+											ImGui::SameLine(0.0f, 5.0f);
+											ImGui::BeginChild("##EditRight", ImVec2(0.0f, -1.5f * buttonSz.y), true,
+												ImGuiWindowFlags_HorizontalScrollbar);
+											{
+												static int inputOpt = 1;
+												ImGui::PushItemWidth(-FLT_MIN);
+												ImGui::Combo("##InputOp", &inputOpt, "Functions\0Fields\0");
+												ImGui::PopItemWidth();
+												ImGui::Separator();
+
+												if (inputOpt == 0) {
+													for (int i = 0; i < IM_ARRAYSIZE(dayCountFunctions); i++) {
+														static bool selection = false;
+														if (ImGui::Selectable(dayCountFunctions[i], selection)) {
+
+														}
+													}
+												}
+												else {
+													for (int i = 0; i < IM_ARRAYSIZE(availableFields); i++) {
+														static bool selection = false;
+														if (ImGui::Selectable(availableFields[i], selection)) {
+
+														}
+													}
+												}
+											}
+											ImGui::EndChild();
+											
+											if (ImGui::Button("Validate")) {
+												std::string result = ";r = dayCount(31, 30, 1, 1, 2021, 2023)";
+												lua_State* L = luaL_newstate();
+												luaL_openlibs(L);
+												lua_pushcfunction(L, isLastOfFebruaryLua);
+												lua_setglobal(L, "isLastOfFebruary");
+
+												lua_pushcfunction(L, daysBetweenLua);
+												lua_setglobal(L, "daysBetween");
+
+												printf("%s\n", (dayCountfunction + result).c_str());
+
+												if (luaL_dostring(L, (dayCountfunction + result).c_str()) == LUA_OK) {
+													lua_getglobal(L, "r");
+													dayFuncStatus = lua_tonumber(L, -1) > 0.0 ? "No error" : "Error";
+													dayCountfunction = "";
+												}
+												else {
+													dayFuncStatus = lua_tostring(L, -1);
+													dayCountfunction = "";
+												}
+												lua_close(L);
+
+											}
+											ImGui::SameLine();
+											ImGui::Text(dayFuncStatus.c_str());
+										}
+										ImGui::EndChild();
+										ImGui::Spacing();
+									}
+
+									if (selected == 1) {
+										ImGui::BeginChild("##YearFracCount", ImVec2(0, 500), false,
+											ImGuiWindowFlags_AlwaysAutoResize);
+										{
+
+											ImGui::BeginChild("##YearFracLeft",
+												ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, -1.5f * buttonSz.y),
+												false, ImGuiWindowFlags_HorizontalScrollbar);
+											{
+												if (ImGui::InputTextMultiline("##YearFracCode", 
+													(char*)yearFracfunction.c_str(),
+													1024 * 16, ImVec2(-FLT_MIN, -FLT_MIN),
+													ImGuiInputTextFlags_AllowTabInput | ImGuiInputTextFlags_ReadOnly)) {
+												}
+											}
+											ImGui::EndChild();
+											ImGui::SameLine(0.0f, 1.0f);
+											ImGui::BeginChild("##YearFracRight", ImVec2(0.0f, -1.5f * buttonSz.y), true,
+												ImGuiWindowFlags_HorizontalScrollbar);
+											{
+												static int inputOpt = 1;
+												ImGui::PushItemWidth(-FLT_MIN);
+												ImGui::Combo("##InputOp", &inputOpt, "Functions\0Fields\0");
+												ImGui::PopItemWidth();
+												ImGui::Separator();
+
+												if (inputOpt == 0) {
+													for (int i = 0; i < IM_ARRAYSIZE(yearFractionFunctions); i++) {
+														static bool selection = false;
+														if (ImGui::Selectable(yearFractionFunctions[i], selection)) {
+
+														}
+													}
+												}
+												else {
+													for (int i = 0; i < IM_ARRAYSIZE(availableFields); i++) {
+														static bool selection = false;
+														if (ImGui::Selectable(availableFields[i], selection)) {
+
+														}
+													}
+												}
+											}
+											ImGui::EndChild();
+											
+											if (ImGui::Button("Validate")) {
+
+												std::string functions = dayCountfunction + "; " + yearFracfunction;
+												std::string yearFracfooter = ";r = yearFraction(31, 30, 1, 1, 2021, 2023)";
+
+												lua_State* L = luaL_newstate();
+												luaL_openlibs(L);
+
+												lua_pushcfunction(L, isLastOfFebruaryLua);
+												lua_setglobal(L, "isLastOfFebruary");
+
+												lua_pushcfunction(L, daysBetweenLua);
+												lua_setglobal(L, "daysBetween");
+
+												if (luaL_dostring(L, (functions + yearFracfooter).c_str()) == LUA_OK) {
+													lua_getglobal(L, "r");
+													yearFracStatus = lua_tonumber(L, -1) > 0.0 ? "No error" : "Error";
+												}
+												else {
+													yearFracStatus = lua_tostring(L, -1);
+												}
+												lua_close(L);
+
+											}
+											ImGui::SameLine();
+											ImGui::Text(yearFracStatus.c_str());
+										}
+										ImGui::EndChild();
+										ImGui::Spacing();
+									}
+
+								}
 								ImGui::EndTabItem();
 							}
 							if (ImGui::BeginTabItem("Test", NULL)) {
 								ImGui::Spacing();
+
+								static tm Date1 = CreateDateNow();
+								static tm Date2 = CreateDate(Date1.tm_mday, Date1.tm_mon + 1, Date1.tm_year + 1900);
+
+								if (openOpenPopup) {
+									Date1 = CreateDateNow();
+									Date2 = CreateDate(Date1.tm_mday, Date1.tm_mon + 1, Date1.tm_year + 1900);
+									calsInit++;
+								}
+
+								static int dayCountResult = 0;
+								static double yearFractionResult = 0.0;
+
+								if ((calsInit & 1)) {
+
+									dayCountResult = mainDayCounter.dayCount(ConvertToQlDate(Date1),
+										ConvertToQlDate(Date2));
+
+									yearFractionResult = mainDayCounter.yearFraction(ConvertToQlDate(Date1),
+										ConvertToQlDate(Date2));
+
+									calsInit++;
+								}
+								ImGui::Dummy(ImVec2(0.0f, 10.0f));
+								ImGui::TextDisabled("Inputs");
+								ImGui::Separator();
+
+								ImGui::Indent(40.0f);
+								ImGui::Dummy(ImVec2(0.0f, 5.0f));
+								ImGui::AlignTextToFramePadding();
+								ImGui::TextUnformatted("1st Date: "); 
+								ImGui::SameLine(0.f, 150.0f - ImGui::CalcTextSize("1st Date: ").x);
+								ImGui::PushItemWidth(35.0f * 3.5f);
+								if (ImGui::DateChooser2("##1stDate", Date1, "%Y-%m-%d", false, NULL,
+									ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+
+									QuantLib::Date date1 = ConvertToQlDate(Date1);
+									QuantLib::Date date2 = ConvertToQlDate(Date2);
+
+									dayCountResult = mainDayCounter.dayCount(date1, date2);
+									yearFractionResult = mainDayCounter.yearFraction(date1, date2);
+
+								}
+								ImGui::Dummy(ImVec2(0.0f, 5.0f));
+								ImGui::AlignTextToFramePadding();
+								ImGui::TextUnformatted("2nd Date: "); 
+								ImGui::SameLine(0.f, 150.0f - ImGui::CalcTextSize("2nd Date: ").x);
+								if (ImGui::DateChooser2("##2ndDate", Date2, "%Y-%m-%d", false, NULL,
+									ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
+
+									QuantLib::Date date1 = ConvertToQlDate(Date1);
+									QuantLib::Date date2 = ConvertToQlDate(Date2);
+
+									dayCountResult = mainDayCounter.dayCount(date1, date2);
+									yearFractionResult = mainDayCounter.yearFraction(date1, date2);
+
+								}
+								ImGui::Unindent(40.0f);
+								ImGui::Dummy(ImVec2(0.0f, 20.0f));
+								ImGui::TextDisabled("Results");
+								ImGui::Separator();
+								ImGui::Dummy(ImVec2(0.0f, 5.0f));
+								ImGui::AlignTextToFramePadding();
+								ImGui::Indent(40.0f);
+								ImGui::TextUnformatted("Day Count:");
+								ImGui::SameLine(0.f, 150.0f - ImGui::CalcTextSize("Day Count:").x);
+								ImGui::InputText("##DayCount", (char*)std::to_string(abs(dayCountResult)).c_str(), 8,
+									ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
 								
+
+								ImGui::Dummy(ImVec2(0.0f, 5.0f));
+								ImGui::AlignTextToFramePadding();
+								ImGui::TextUnformatted("Year Fraction:");
+								ImGui::SameLine(0.f, 150.0f - ImGui::CalcTextSize("Year Fraction:").x);
+								ImGui::InputText("##YearFraction", 
+									(char*)std::to_string(abs(yearFractionResult)).c_str(), 8,
+									ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
+								
+
+								ImGui::Unindent(40.0f);
 								ImGui::Spacing();
 								ImGui::EndTabItem();
 							}

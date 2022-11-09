@@ -55,8 +55,8 @@ void QuantIOCurrency::DisplayContents() {
 		}
 
 		//#rows and columns
-		static int iRows = tableData.size() - 1;
-		static int iColumns = tableData[0].size();
+		static std::size_t iRows = tableData.size() - 1;
+		static std::size_t iColumns = tableData[0].size();
 
 		//Filtering text field
 		static ImGuiTextFilter filter;

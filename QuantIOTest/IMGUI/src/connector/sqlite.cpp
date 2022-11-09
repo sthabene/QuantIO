@@ -16,7 +16,7 @@ namespace QuantIO {
         sqlite3_close(db_);
     }
 
-    Connection::Connection(Connection && other): db_{other.db_} {
+    /*Connection::Connection(Connection && other): db_{other.db_} {
         other.db_ = nullptr;
     }
 
@@ -27,7 +27,7 @@ namespace QuantIO {
             other.db_ = nullptr;
         }
         return *this;
-    }
+    }*/
 
     Connection::Stmt Connection::create_statement(const std::string & sql) {
         return Stmt(sql, *this);

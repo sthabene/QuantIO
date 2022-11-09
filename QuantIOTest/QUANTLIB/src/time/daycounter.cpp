@@ -1,8 +1,10 @@
+#pragma once
 #include "daycounter.hpp"
 
-CustomDayCounter::CustomDayCounter(std::string& name, float& yearDenominator, bool& includeLast) {
-	ext::shared_ptr<DayCounter::Impl> customDayCountImpl(
-		new CustomDayCounter::CustomDayCounterImpl(name, yearDenominator, includeLast));
+CustomDayCounter::CustomDayCounter(std::string& name, bool& includeLast, std::string& dayCountFunction, 
+	std::string& yearFractionFunction) {
+	QuantLib::ext::shared_ptr<QuantLib::DayCounter::Impl> customDayCountImpl(
+		new CustomDayCounter::CustomDayCounterImpl(name, includeLast, dayCountFunction, yearFractionFunction));
 	this->impl_ = customDayCountImpl;
 }
 
@@ -10,29 +12,32 @@ CustomDayCounter::CustomDayCounter(const CustomDayCounter& customDayCounter) {
 	this->impl_ = customDayCounter.impl_;
 }
 
+void CustomDayCounter::setAnotherDayCounter(std::string& name, bool& includeLast, std::string& dayCountFunction,
+	std::string& yearFractionFunction) {
+	QuantLib::ext::shared_ptr<QuantLib::DayCounter::Impl> customDayCountImpl(
+		new CustomDayCounter::CustomDayCounterImpl(name, includeLast, dayCountFunction, yearFractionFunction));
+	impl_ = customDayCountImpl;
+};
+
+
 std::string CustomDayCounter::CustomDayCounterImpl::name() const {
 	return this->m_dayCounterName;
 };
 
-Date::serial_type CustomDayCounter::CustomDayCounterImpl::dayCount(const Date& d1, const Date& d2) const {
-	//Thirty 360
-	Day dd1 = d1.dayOfMonth();
-	Day dd2 = d2.dayOfMonth();
-	Month mm1 = d1.month();
-	Month mm2 = d2.month();
-	Year yy1 = d1.year();
-	Year yy2 = d2.year();
+QuantLib::Date::serial_type CustomDayCounter::CustomDayCounterImpl::dayCount(const QuantLib::Date& d1, 
+	const QuantLib::Date& d2) const {
+	
+	QuantLib::Date::serial_type dayCount = getDayCount(d1, d2, this->m_dayCountFunction, this->m_yearFractionFunction)
+		+ (this->m_includeLast ? 1 : 0);
 
-	if (dd1 == 31) { dd1 = 30; }
-	if (dd2 == 31 && dd1 == 30) { dd2 = 30; }
-
-	return 360 * (yy2 - yy1) + 30 * (mm2 - mm1) + (dd2 - dd1);
+	return dayCount;
 }
 
-Time CustomDayCounter::CustomDayCounterImpl::yearFraction(const Date& d1, const Date& d2, const Date&, const Date&) const {
-	return this->dayCount(d1, d2) / this->m_yearDenominator;
+QuantLib::Time CustomDayCounter::CustomDayCounterImpl::yearFraction(const QuantLib::Date& d1, 
+	const QuantLib::Date& d2, const QuantLib::Date&, const QuantLib::Date&) const {
+
+	QuantLib::Time yearFraction = getYearFraction(d1, d2, this->m_dayCountFunction, this->m_yearFractionFunction);
+
+	return yearFraction;
 }
 
-void CustomDayCounter::setAnotherDayCounter(std::string& name, float& yearDenominator, bool& includeLast) {
-
-};

@@ -100,7 +100,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_MBCS;%(PreprocessorDefinitions);PROJECT_DIR=R"($(ProjectDir))"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)vendor\lua\include;$(SolutionDir)vendor\utfcpp\source;$(SolutionDir)vendor\quantlib\;$(SolutionDir)vendor\boost\;$(ProjectDir)src\quant\;$(ProjectDir)src\connector\include\;$(ProjectDir)src\gui\include\;$(SolutionDir)vendor\sqlite\;$(SolutionDir)vendor\imgui\;$(SolutionDir)vendor\imgui\backends;$(SolutionDir)vendor\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)vendor\lua\include;$(SolutionDir)vendor\utfcpp\source;$(SolutionDir)vendor\quantlib\;$(SolutionDir)vendor\boost\;$(ProjectDir)src\quant\;$(ProjectDir)src\connector\include\;$(ProjectDir)src\luastate\;$(ProjectDir)src\gui\include\;$(SolutionDir)vendor\sqlite\;$(SolutionDir)vendor\imgui\;$(SolutionDir)vendor\imgui\backends;$(SolutionDir)vendor\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -156,6 +156,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\QUANTLIB\src\time\calendar.cpp" />
+    <ClCompile Include="..\QUANTLIB\src\time\daycounter.cpp" />
     <ClCompile Include="src\connector\database.cpp" />
     <ClCompile Include="src\connector\error.cpp" />
     <ClCompile Include="src\connector\sqlite.cpp" />

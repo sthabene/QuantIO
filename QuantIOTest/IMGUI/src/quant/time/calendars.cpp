@@ -27,7 +27,8 @@ static bool showFilter = false;
 static std::vector<std::string> selectedRow;
 static ImGuiInputTextFlags popupInputFlags = ImGuiInputTextFlags_None;
 static ImGuiTabItemFlags tabItemFlag = ImGuiTabItemFlags_None;
-
+std::string currentWeek = "17";
+static std::vector<bool> weekendBool = {false, false, false, false, false, false, false};
 
 //Calendar Items
 static std::vector<std::vector<std::string>> holidays;
@@ -175,6 +176,8 @@ void QuantIOCalendars::DisplayContents() {
 
 							mainCalendar.setAnotherCalendar(currentRow->at(1), selectedRow.at(4)); 
 
+							
+
 							if (returnedHolidays.size() > 0) {
 								mainCalendar.addHolidays(returnedHolidays[0]);
 							}
@@ -276,9 +279,7 @@ void QuantIOCalendars::DisplayContents() {
 
 						const char* market[2] = { "Exchange", "Settlement" };
 						int selectedItemMarket = selectedRow[3] == "Exchange" ? 0 : 1;
-						static int itemCurrent = 0;
-
-						static std::string currentWeek = "17";
+						static int itemCurrent = 0;						
 
 						if (openEditPopup || openOpenPopup) {
 							itemCurrent = selectedItemMarket;
@@ -362,37 +363,37 @@ void QuantIOCalendars::DisplayContents() {
 									
 
 									ImGui::Indent(40.0f);
-									static tm Date1 = QuantIO::CreateDateNow();
-									static tm Date2 = QuantIO::CreateDate(Date1.tm_mday, Date1.tm_mon+1, Date1.tm_year + 1900);
+									static tm Date1 = CreateDateNow();
+									static tm Date2 = CreateDate(Date1.tm_mday, Date1.tm_mon+1, Date1.tm_year + 1900);
 
 									static bool includeFirst = false;
 									static bool includeLast = false;
 									
 									static int numBusinessDays = 0;
 
-									static tm busDayDate = QuantIO::CreateDateNow();
-									static tm holDayDate = QuantIO::CreateDateNow();
-									static tm lastMonDate = QuantIO::CreateDateNow();
-									static tm lastBusDate = QuantIO::CreateDateNow();
+									static tm busDayDate = CreateDateNow();
+									static tm holDayDate = CreateDateNow();
+									static tm lastMonDate = CreateDateNow();
+									static tm lastBusDate = CreateDateNow();
 
 									static bool busDay = false;
 									static bool holDay = false;
 									static bool lastMon = false;
 
-									static tm lastBusResult = QuantIO::CreateDateNow();
+									static tm lastBusResult = CreateDateNow();
 									static char lastBusResultOut[10] = { '\0' };
 									static QuantLib::Date lastBusResultQl = QuantLib::Date::todaysDate();
 									
 									if ( (calsInit & 1) && currentWeek.length() < 7) {
 										numBusinessDays = 0;
-										Date1 = QuantIO::CreateDateNow();
-										Date2 = QuantIO::CreateDate(Date1.tm_mday, Date1.tm_mon + 1, Date1.tm_year + 1900);
+										Date1 = CreateDateNow();
+										Date2 = CreateDate(Date1.tm_mday, Date1.tm_mon + 1, Date1.tm_year + 1900);
 
 										busDay = mainCalendar.isBusinessDay(ConvertToQlDate(busDayDate));
 										holDay = mainCalendar.isHoliday(ConvertToQlDate(holDayDate));
 										lastMon = mainCalendar.isEndOfMonth(ConvertToQlDate(lastMonDate));
 										lastBusResultQl = mainCalendar.endOfMonth(ConvertToQlDate(lastBusDate));
-										lastBusResult = QuantIO::ConvertToTm(lastBusResultQl);
+										lastBusResult = ConvertToTm(lastBusResultQl);
 
 										calsInit++;
 									}
@@ -535,7 +536,7 @@ void QuantIOCalendars::DisplayContents() {
 										if (ImGui::DateChooser2("##LastBusinessDate", lastBusDate, "%Y-%m-%d", false, NULL,
 											ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
 											lastBusResultQl = mainCalendar.endOfMonth(ConvertToQlDate(lastBusDate));
-											lastBusResult = QuantIO::ConvertToTm(lastBusResultQl);
+											lastBusResult = ConvertToTm(lastBusResultQl);
 										}
 										ImGui::SameLine();
 										ImGui::TextUnformatted("is");
@@ -551,7 +552,7 @@ void QuantIOCalendars::DisplayContents() {
 										ImGui::TextDisabled("Adjust");
 										ImGui::Separator();
 
-										static tm Date7 = QuantIO::CreateDateNow();
+										static tm Date7 = CreateDateNow();
 
 										ImGui::Indent(40.0f);
 
@@ -571,7 +572,7 @@ void QuantIOCalendars::DisplayContents() {
 										ImGui::TextDisabled("Advance");
 										ImGui::Separator();
 
-										static tm Date8 = QuantIO::CreateDateNow();
+										static tm Date8 = CreateDateNow();
 
 										ImGui::Indent(40.0f);
 
@@ -636,7 +637,7 @@ void QuantIOCalendars::DisplayContents() {
 
 static void RecalculateDate(tm& date) {
 	date.tm_isdst = -1;   //Removes daylight saving time
-	tm minDate = QuantIO::CreateDate(2, 1, 1970);
+	tm minDate = CreateDate(2, 1, 1970);
 	time_t tmp; //Convert tm structure to time_t, reverse of localtime()
 	if (mktime(&date) < mktime(&minDate)) {
 		tmp = mktime(&minDate);
@@ -1144,7 +1145,7 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 
 					}
 
-					dateOut = QuantIO::CreateDate(iday, imon, iyear);
+					dateOut = CreateDate(iday, imon, iyear);
 
 					RecalculateDate(dateOut);
 
@@ -1183,12 +1184,12 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 				mon.erase(0, mon.find_first_not_of('0'));
 				day.erase(0, day.find_first_not_of('0'));
 				
-				currentDate = QuantIO::CreateDate(1, std::stoi(mon), std::stoi(year));
+				currentDate = CreateDate(1, std::stoi(mon), std::stoi(year));
 				RecalculateDate(currentDate);
 
 				holidaysInMonthInit++; //To show or refresh holidays
 
-				dateOut = QuantIO::CreateDate(std::stoi(day), std::stoi(mon), std::stoi(year));
+				dateOut = CreateDate(std::stoi(day), std::stoi(mon), std::stoi(year));
 				RecalculateDate(dateOut);
 
 				*/

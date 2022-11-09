@@ -1,6 +1,9 @@
 #include <string>
 #include <vector>
+#include <sstream>
 #include <iostream>
+
+#include "boost/algorithm/string.hpp"
 
 extern "C" {
 #include "lua.h"
@@ -53,6 +56,8 @@ int main() {
 	lua_State* L = luaL_newstate(); //We need to start a lua virtual machine
 	luaL_openlibs(L); //Opens a set of libraries that a typical prgram will use
 
+	
+
 	lua_pushcfunction(L, sq); //pushes a value of type function
 	lua_setglobal(L, "sq"); //assigns the function to the global variable mysin
 
@@ -66,7 +71,7 @@ int main() {
 
 	if (luaL_dostring(L, expression3.c_str()) == LUA_OK) {
 		lua_getglobal(L, "r"); /* function to be called */
-		std::cout << lua_tonumber(L, -1) << "\n";
+		//std::cout << lua_tonumber(L, -1) << "\n";
 	}
 	else {
 		error(L, "Error: %s", lua_tostring(L, -1));
@@ -85,6 +90,11 @@ int main() {
 	//std::cout << z << "\n";
 
 	lua_close(L); //We need to close the lua_virtual machine
+
+	std::string target("Would you like a foo of chocolate. Two foos of chocolate?");
+	boost::replace_all(target, "foo", "22");
+
+	std::cout << target;
 
 	return 0;
 }
