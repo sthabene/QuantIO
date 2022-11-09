@@ -425,7 +425,7 @@ void QuantIODayCounters::DisplayContents() {
 												}
 											}
 											ImGui::EndChild();
-											ImGui::SameLine(0.0f, 1.0f);
+											ImGui::SameLine(0.0f, 5.0f);
 											ImGui::BeginChild("##YearFracRight", ImVec2(0.0f, -1.5f * buttonSz.y), true,
 												ImGuiWindowFlags_HorizontalScrollbar);
 											{

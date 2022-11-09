@@ -42,8 +42,8 @@ inline int daysBetweenLua(lua_State* L) {
 	QuantLib::Day d1 = (int)luaL_checkinteger(L, 1);
 	QuantLib::Day d2 = (int)luaL_checkinteger(L, 2);
 
-	QuantLib::Month m1 = ConvertToQlMonth((int)luaL_checkinteger(L, 3));
-	QuantLib::Month m2 = ConvertToQlMonth((int)luaL_checkinteger(L, 4));
+	QuantLib::Month m1 = ConvertToQlMonth((int)luaL_checkinteger(L, 3) - 1);
+	QuantLib::Month m2 = ConvertToQlMonth((int)luaL_checkinteger(L, 4) - 1);
 	
 	QuantLib::Year y1 = (int)luaL_checkinteger(L, 5);
 	QuantLib::Year y2 = (int)luaL_checkinteger(L, 6);
