@@ -29,7 +29,6 @@ public:
 	CustomCalendar() = default;
 };
 
-
 static tm CreateDate(int day, int month, int year) {
 	struct tm tm = { 0 };
 	tm.tm_isdst = -1;
@@ -94,8 +93,7 @@ static QuantLib::Month ConvertToQlMonth(int intMonth) {
 }
 
 static QuantLib::Date ConvertToQlDate(tm& date) {
-	QuantLib::Month month = ConvertToQlMonth(date.tm_mon);
-	return QuantLib::Date(date.tm_mday, month, date.tm_year + 1900);
+	return QuantLib::Date(date.tm_mday, ConvertToQlMonth(date.tm_mon), date.tm_year + 1900);
 };
 
 static QuantLib::Date ConvertToQlDate(std::string& date) {
@@ -169,3 +167,4 @@ static tm ConvertToTm(QuantLib::Date& date) {
 	mon = ConvertToMonth(month);	
 	return CreateDate(mday, mon, year);
 };
+

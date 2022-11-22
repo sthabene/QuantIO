@@ -1,12 +1,34 @@
 #pragma once
 #include "gui.hpp"
 
+//Db connection
+#include "database.hpp"
+#include "sqlite.hpp"
+#include "error.hpp"
+
+//IMGUI
+static ImVec2 buttonSz(25.0f * 4.0f, 30.0f); //To change 
+
+namespace QuantIO {
+	//DB Connection
+	static QuantIO::Connection dbConnection("..\\..\\misc\\database\\main.db");
+}
+
+//Rounding
+class QuantIORounding : public QuantIO::Window {
+public:
+	QuantIORounding() : Window("Rounding", "QuantIO", false) { };
+	void DisplayContents() override;
+};
+
+//Currencies
 class QuantIOCurrency : public QuantIO::Window {
 public:
 	QuantIOCurrency() : Window("Currencies", "QuantIO", false) { };
 	void DisplayContents() override;
 };
 
+//Configuration
 class QuantIOConfig : public QuantIO::Window {
 public:
 	QuantIOConfig() : Window("Configuration", "QuantIO", false) { };

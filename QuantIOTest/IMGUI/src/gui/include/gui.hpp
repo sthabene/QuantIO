@@ -9,22 +9,14 @@
 #include <math.h>           // sqrtf, powf, cosf, sinf, floorf, ceilf
 #include <stdio.h>          // vsnprintf, sscanf, printf
 #include <stdlib.h>         // NULL, malloc, free, atoi
+#include <vector>
+#include <string>
 #include <time.h>
 #include "imgui.h"
 #include "imgui_internal.h"
 
-#include <ql/time/date.hpp>
-
 #include "../../vendor/IconFontCppHeaders/IconsFontAwesome5.h"
 #include "addons/imguidatechooser/imguidatechooser.h"
-
-//Db connection
-#include "database.hpp"
-#include "sqlite.hpp"
-#include "error.hpp"
-
-//QuantLib
-#include <ql/types.hpp>
 
 static void HelpMarker(const char* desc)
 {
@@ -81,16 +73,12 @@ namespace QuantIO {
 	//Store all windows
 	static ImVector<QuantIO::Window> ActiveWindows;
 
-
-	//DB Connection
-	static QuantIO::Connection dbConnection("..\\..\\misc\\database\\main.db");
-
 	//Getting window position
-	static ImVec2 popupLocation(ImVec2 workPos = ImGui::GetMainViewport()->WorkPos, const float pads = 1.0f) {
+	static ImVec2 popupLocation(ImVec2 workPos = ImGui::GetMainViewport()->WorkPos, ImVec2 pads = ImVec2(1.0f, 1.0f)) {
 		const float PAD = 20.0f;
 		ImVec2 windowPos;
-		windowPos.x = workPos.x + pads * PAD;
-		windowPos.y = workPos.y + pads * PAD;
+		windowPos.x = workPos.x + pads.x * PAD;
+		windowPos.y = workPos.y + pads.y * PAD;
 		return windowPos;
 	}
 

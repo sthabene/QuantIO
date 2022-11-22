@@ -4,18 +4,19 @@
 //#include "boost/format.hpp"
 #include <limits>
 #include <ql/time/date.hpp>
+#include <ql/time/daycounters/all.hpp>
 #include "time/daycounter.hpp"
+#include "time/calendar.hpp"
 //#include <vector>
 ////#include <ql/time/calendar.hpp>
-////#include <ql/time/daycounter.hpp>
+//#include <ql/time/daycounter.hpp>
 //#include <time.h>
 //#include <map>
 //
 //#include "time/calendar.hpp"
-//#include "time/daycounter.hpp"
 
 //#include <ql/time/daycounters/all.hpp>
-//#include <ql/time/calendars/all.hpp>
+#include <ql/time/calendars/all.hpp>
 
 using namespace QuantLib;
 
@@ -27,10 +28,17 @@ int main() {
 
 	std::cout << dayCounter.dayCount(Date(1, Jan, 2021), Date(1, Jan, 2022)) << "\n";
 	std::cout << dayCounter.yearFraction(Date(1, Jan, 2021), Date(1, Jan, 2022)) << "\n";*/
-	
+	std::string name = "name";
+	std::string weekend = "0";
+
+	CustomCalendar calendar1(name, weekend);
+
+	calendar1.addHoliday(QuantLib::Date(2, April, 2021));
+	calendar1.addHoliday(QuantLib::Date(3, April, 2021));
+	calendar1.addHoliday(QuantLib::Date(4, April, 2021));
 	
 	std::string dayCountFunction = "function dayCount (Day1, Day2, Month1, Month2, Year1, Year2) "
-		"    return daysBetween(Day1, Day2, Month1, Month2, Year1, Year2)"
+		"    return businessDaysBetween(Day1, Day2, Month1, Month2, Year1, Year2)"
 		" end";
 
 	std::string yearFracFunction = "function yearFraction (Day1, Day2, Month1, Month2, Year1, Year2)"
@@ -38,14 +46,13 @@ int main() {
 		" end";
 
 	std::string dayCountName = "Custom one";
-	bool includeLast = false;
-	CustomDayCounter dayCounter = CustomDayCounter(dayCountName, includeLast, dayCountFunction, yearFracFunction);
+	CustomDayCounter dayCounter = CustomDayCounter(dayCountName, dayCountFunction, yearFracFunction, calendar1);
 
 	QuantLib::Date date1 = QuantLib::Date(1, QuantLib::Month::Apr, 2022);
-	QuantLib::Date date2 = QuantLib::Date(1, QuantLib::Month::Apr, 2028);
+	QuantLib::Date date2 = QuantLib::Date(1, QuantLib::Month::Apr, 2021);
 
-	std::cout << dayCounter.dayCount(date1, date2) << "\n";
-	std::cout << QuantLib::daysBetween(date1, date2) << "\n";
+	std::cout << calendar1.businessDaysBetween(date2, date1, false, false) << "\n";
+	std::cout << dayCounter.dayCount(date2, date1) << "\n";
 
 
 	return 0;

@@ -27,7 +27,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
@@ -145,16 +145,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\database.cpp" />
-    <ClCompile Include="src\error.cpp" />
+    <ClCompile Include="src\connector\database.cpp" />
+    <ClCompile Include="src\connector\error.cpp" />
+    <ClCompile Include="src\connector\sqlite.cpp" />
+    <ClCompile Include="src\connector\stmt.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\sqlite.cpp" />
-    <ClCompile Include="src\stmt.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\database.hpp" />
-    <ClInclude Include="include\error.hpp" />
-    <ClInclude Include="include\sqlite.hpp" />
+    <ClInclude Include="src\connector\include\database.hpp" />
+    <ClInclude Include="src\connector\include\error.hpp" />
+    <ClInclude Include="src\connector\include\sqlite.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

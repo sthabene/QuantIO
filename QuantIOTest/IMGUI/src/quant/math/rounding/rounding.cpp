@@ -1,4 +1,4 @@
-#include "rounding.hpp"
+#include "quant.hpp"
 #include "boost/algorithm/string/join.hpp"
 #include <algorithm>
 
@@ -6,7 +6,6 @@ static std::string query = "SELECT LABEL, TYPE, PRECISION, DIGIT FROM ROUNDING O
 static std::string title = "Rounding###";
 static std::vector<std::vector<std::string>> tableData;
 static int refresh = 1;
-static ImVec2 buttonSz(25.0f * 5.0f, 32.0f); //To change 
 
 void QuantIORounding::DisplayContents() {
 

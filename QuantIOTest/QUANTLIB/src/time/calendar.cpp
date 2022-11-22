@@ -2,6 +2,7 @@
 
 #include "calendar.hpp"
 #include "boost/algorithm/string.hpp"
+#include "boost/format.hpp"
 
 CustomCalendar::CustomCalendar(std::string& name, std::string& weekends) {
 	QuantLib::ext::shared_ptr<QuantLib::Calendar::Impl> customImpl(new CustomCalendar::CustomCalendarImpl(name, weekends));

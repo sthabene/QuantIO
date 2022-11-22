@@ -1,42 +1,22 @@
-#include "../include/sqlite.hpp"
-#include "../include/database.hpp"
+#include "connector/include/sqlite.hpp"
+#include "connector/include/database.hpp"
+#include <iostream>
 
 using namespace QuantIO;
-
-class Testing {
-private:
-    std::string m_test;
-public:
-    Testing() {
-        m_test = "Green";
-    }
- };
-
-class Testing2 : Testing {
-private:
-    std::string m_test2;
-public:
-    Testing2() : Testing() {
-        m_test2 = "Blue";
-    }
-    std::string returnSomething() {
-        return m_test2;
-    }
-};
 
 int main() {
 
     std::string location = "..\\..\\misc\\database\\main.db";
     
     Connection connection(location);
-    Connection::Stmt statement(connection);
-
-    //statement.getTable("SELECT CODE, NAME FROM CURRENCY");
-
-    Testing testing();
-
-    connection.create_statement("SELECT CODE, NAME FROM CURRENCY");
+    static std::vector<std::vector<std::string>> tableData = 
+        connection.getTableData2("SELECT CODE, NAME FROM CURRENCY");
     
+    for (std::vector<std::string> row : tableData) {
+        for (std::string cell : row) {
+            std::cout << cell << "\n";
+        }
+    }
 
     return 0;
 }

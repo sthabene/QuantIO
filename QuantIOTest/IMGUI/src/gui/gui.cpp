@@ -5,7 +5,6 @@
 #include "guitools.hpp"
 #include "guiaddons.hpp"
 #include "quant.hpp"
-#include "math\rounding\rounding.hpp"
 
 #include <algorithm>
 
@@ -41,6 +40,7 @@ void QuantIO::AddWindows() {
     AddLayoutPopups(QuantIO::ActiveWindows);
     AddTables(QuantIO::ActiveWindows);
     AddToolsWindows(QuantIO::ActiveWindows);
+    //QuantIO::ActiveWindows.push_back(QuantIORounding());
     QuantIO::ActiveWindows.push_back(QuantIOCurrency());
     QuantIO::ActiveWindows.push_back(QuantIOConfig());
     QuantIO::ActiveWindows.push_back(QuantIOCalendars());

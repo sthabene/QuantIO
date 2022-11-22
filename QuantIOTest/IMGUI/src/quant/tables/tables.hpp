@@ -1,5 +1,5 @@
 #pragma once
-#include "gui.hpp"
+#include "quant.hpp"
 
 namespace QuantIO {
 

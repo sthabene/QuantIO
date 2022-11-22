@@ -15,7 +15,6 @@ ImGuiTableFlags tableFlags = ImGuiTableFlags_RowBg |
 				ImGuiTableFlags_ScrollY | 
 				ImGuiTableFlags_NoHostExtendY;
 
-ImVec2 buttonSz(25.0f * 5.0f, 32.0f); //To change 
 
 namespace QuantIO {
 	void Tables::Table(std::string& query, std::string& title, std::vector<std::vector<std::string>>& data,

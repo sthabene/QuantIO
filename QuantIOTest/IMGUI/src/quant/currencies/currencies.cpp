@@ -29,7 +29,9 @@ static std::vector<std::string> selectedRouding;
 ImGuiInputTextFlags popupInputFlags = ImGuiInputTextFlags_None;
 ImGuiTabItemFlags roundingTabItemFlags = ImGuiTabItemFlags_None;
 
-static ImVec2 buttonSz(25.0f * 5.0f, 32.0f); //To change 
+//IMGUI
+static std::size_t iRows = 0;
+static std::size_t iColumns = 0;
 
 inline std::string getRoundingType(std::string roundingType) {
 
@@ -51,12 +53,13 @@ void QuantIOCurrency::DisplayContents() {
 		//Running the query
 		if (refresh & 1) {
 			tableData = QuantIO::dbConnection.getTableData2(query);
+
+			//#rows and columns
+			iRows = tableData.size() - 1;
+			iColumns = tableData[0].size();
+
 			refresh++;
 		}
-
-		//#rows and columns
-		static std::size_t iRows = tableData.size() - 1;
-		static std::size_t iColumns = tableData[0].size();
 
 		//Filtering text field
 		static ImGuiTextFilter filter;
@@ -74,11 +77,11 @@ void QuantIOCurrency::DisplayContents() {
 		}*/
 
 		//Filtered Data
-		int startCount = 0;
-		int displayRows = iRows;
+		std::size_t startCount = 0;
+		std::size_t displayRows = iRows;
 		std::vector<std::vector<std::string>> filteredData;
 		if (filter.IsActive()) {
-			for (int i = 1; i <= iRows; i++) {
+			for (std::size_t i = 1; i <= iRows; i++) {
 				std::string rowData = boost::algorithm::join(tableData[i], " ");
 				if (filter.PassFilter(rowData.c_str())) {
 					filteredData.push_back(tableData[i]);
@@ -419,7 +422,7 @@ void QuantIOCurrency::DisplayContents() {
 								ImGui::PushItemWidth(rowHeight * 15.0f);
 
 								if (ImGui::BeginCombo("##Rounding", currentRounding.c_str())) {
-									for (int n = 0; n < rounding.size(); n++) {
+									for (std::size_t n = 0; n < rounding.size(); n++) {
 										
 										const bool isSelected = (currentRoundingIndex == n);
 
@@ -463,7 +466,8 @@ void QuantIOCurrency::DisplayContents() {
 
 								ImGui::Unindent(15.0f);
 
-								ImGui::SetNextWindowPos(QuantIO::popupLocation(ImGui::GetWindowPos(), 2.0f), 
+								ImGui::SetNextWindowPos(QuantIO::popupLocation(ImGui::GetWindowPos(), 
+									ImVec2(2.0f, 2.0f)),
 									ImGuiCond_Appearing, ImVec2(0.0f, 0.0f));
 								ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_FirstUseEver);
 								if (ImGui::BeginPopupModal("Edit Rounding", NULL, 
@@ -560,7 +564,8 @@ void QuantIOCurrency::DisplayContents() {
 								}
 
 
-								ImGui::SetNextWindowPos(QuantIO::popupLocation(ImGui::GetWindowPos(), 2.0f),
+								ImGui::SetNextWindowPos(QuantIO::popupLocation(ImGui::GetWindowPos(), 
+									ImVec2(2.0f, 2.0f)),
 									ImGuiCond_Appearing, ImVec2(0.0f, 0.0f));
 								ImGui::SetNextWindowSize(ImVec2(600, 400), ImGuiCond_FirstUseEver);
 								if (ImGui::BeginPopupModal("New Rounding", NULL,

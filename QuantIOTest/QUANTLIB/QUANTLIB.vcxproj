@@ -73,7 +73,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)vendor\lua\include;$(SolutionDir)vendor\quantlib\;$(SolutionDir)vendor\boost\;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)vendor\sqlite\include\;$(ProjectDir)src\;$(SolutionDir)vendor\lua\include;$(SolutionDir)vendor\quantlib\;$(SolutionDir)vendor\boost\;$(IncludePath)</IncludePath>
     <LibraryPath>$(VC_LibraryPath_x86);$(WindowsSDK_LibraryPath_x86);$(SolutionDir)vendor\quantlib\lib\;$(SolutionDir)vendor\boost\stage\lib</LibraryPath>
     <OutDir>$(ProjectDir)bin\$(platform)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)bin\intermediaries\$(platform)\$(Configuration)\</IntDir>
@@ -102,7 +102,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>liblua54.a;QuantLib-mt-gd.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>;liblua54.a;QuantLib-mt-gd.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)vendor\lua;$(SolutionDir)vendor\quantlib\lib\;$(SolutionDir)vendor\boost\stage\lib;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -153,16 +153,11 @@
   <ItemGroup>
     <ClCompile Include="src\luastate\luastate.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\QUANTLIB.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="src\time\calendar.cpp" />
     <ClCompile Include="src\time\daycounter.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\all.hpp" />
     <ClInclude Include="src\luastate\luastate.hpp" />
-    <ClInclude Include="src\QUANTLIB.h" />
     <ClInclude Include="src\time\calendar.hpp" />
     <ClInclude Include="src\time\daycounter.hpp" />
   </ItemGroup>

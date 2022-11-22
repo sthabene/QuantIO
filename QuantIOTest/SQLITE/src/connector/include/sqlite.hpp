@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <vector>
 #include "sqlite3.h"
 
 namespace QuantIO {
@@ -66,6 +67,13 @@ namespace QuantIO {
         /// Get wrapped C sqlite3 object
         sqlite3 * get_c_obj();
 
+        //Used to obtain table data
+        std::vector<std::vector<std::string>> getTableData2(const std::string& sql, bool header = true,
+            bool transpose = false);
+
+        void updateData(const std::string& sql);
+        void deleteData(const std::string& sql);
+
     private:
         /// sqlite C API's DB connection obj
         sqlite3 * db_ = nullptr;
@@ -89,7 +97,7 @@ namespace QuantIO {
         Stmt(Stmt &&); // movable
         Stmt & operator=(Stmt &&);
 
-        void getTable(const std::string& sql);
+        std::vector<std::vector<std::string>> getTableData(const std::string& sql);
 
         /// Functions for binding data to SQL statements
         /// Bind var by index
@@ -132,6 +140,9 @@ namespace QuantIO {
 
         /// Get number of columns
         int get_col_count();
+
+        /// Get column name
+        std::string get_col_name(int index);
 
         /// Run the statement.
         /// true on SELECT statements when more rows remain to be fetched

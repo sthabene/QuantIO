@@ -66,18 +66,6 @@
     <ClCompile Include="src\quant\currencies\currencies.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\connector\database.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\connector\error.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\connector\sqlite.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\connector\stmt.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\quant\tables\tables.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -102,6 +90,9 @@
     <ClCompile Include="src\quant\time\daycounters.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\QUANTLIB\src\time\daycounter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\vendor\imgui\imconfig.h">
@@ -120,15 +111,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\vendor\imgui\backends\imgui_impl_opengl3_loader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\connector\include\database.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\connector\include\error.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\connector\include\sqlite.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\gui\include\gui.hpp">
@@ -152,9 +134,6 @@
     <ClInclude Include="src\quant\tables\tables.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\quant\math\rounding\rounding.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\vendor\imgui\addons\imguidatechooser\imguidatechooser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -162,6 +141,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\quant\quant.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\quant\time\time.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

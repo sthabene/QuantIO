@@ -74,7 +74,7 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(ProjectDir)bin\$(platform)\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)bin\intermediaries\$(platform)\$(Configuration)\</IntDir>
-    <IncludePath>$(SolutionDir)vendor\sqlite\include\;$(SolutionDir)QuantIOTest\QUANTLIB\src;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)vendor\sqlite\include\;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>true</LinkIncremental>
@@ -100,13 +100,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_MBCS;%(PreprocessorDefinitions);PROJECT_DIR=R"($(ProjectDir))"</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)vendor\lua\include;$(SolutionDir)vendor\utfcpp\source;$(SolutionDir)vendor\quantlib\;$(SolutionDir)vendor\boost\;$(ProjectDir)src\quant\;$(ProjectDir)src\connector\include\;$(ProjectDir)src\luastate\;$(ProjectDir)src\gui\include\;$(SolutionDir)vendor\sqlite\;$(SolutionDir)vendor\imgui\;$(SolutionDir)vendor\imgui\backends;$(SolutionDir)vendor\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)vendor\lua\include;$(SolutionDir)vendor\utfcpp\source;$(SolutionDir)vendor\quantlib\;$(SolutionDir)vendor\boost\;$(ProjectDir)src\quant\;$(SolutionDir)QuantIOTest\SQLITE\src\connector\include\;$(ProjectDir)src\luastate\;$(ProjectDir)src\gui\include\;$(SolutionDir)vendor\sqlite\include\;$(SolutionDir)vendor\imgui\;$(SolutionDir)vendor\imgui\backends;$(SolutionDir)vendor\glfw\include;$(SolutionDir)QuantIOTest\QUANTLIB\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>liblua54.a;QuantLib-mt-gd.lib;sqlite3.lib;opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)vendor\lua;$(SolutionDir)vendor\glfw\lib-vc2022;$(SolutionDir)vendor\sqlite\;$(SolutionDir)vendor\quantlib\lib\;$(SolutionDir)vendor\boost\stage\lib;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SQLITE.lib;liblua54.a;QuantLib-mt-gd.lib;sqlite3.lib;opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)QuantIOTest\SQLITE\bin\Win32\Debug;$(SolutionDir)vendor\lua;$(SolutionDir)vendor\glfw\lib-vc2022;$(SolutionDir)vendor\sqlite\;$(SolutionDir)vendor\quantlib\lib\;$(SolutionDir)vendor\boost\stage\lib;</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>msvcrt.lib</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
@@ -157,10 +157,6 @@
   <ItemGroup>
     <ClCompile Include="..\QUANTLIB\src\time\calendar.cpp" />
     <ClCompile Include="..\QUANTLIB\src\time\daycounter.cpp" />
-    <ClCompile Include="src\connector\database.cpp" />
-    <ClCompile Include="src\connector\error.cpp" />
-    <ClCompile Include="src\connector\sqlite.cpp" />
-    <ClCompile Include="src\connector\stmt.cpp" />
     <ClCompile Include="src\gui\gui.cpp" />
     <ClCompile Include="src\gui\guiaddons.cpp" />
     <ClCompile Include="src\gui\guiconfig.cpp" />
@@ -187,9 +183,6 @@
     <ClCompile Include="src\quant\time\daycounters.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\connector\include\database.hpp" />
-    <ClInclude Include="src\connector\include\error.hpp" />
-    <ClInclude Include="src\connector\include\sqlite.hpp" />
     <ClInclude Include="..\..\vendor\imgui\imconfig.h" />
     <ClInclude Include="..\..\vendor\imgui\imgui.h" />
     <ClInclude Include="..\..\vendor\imgui\imgui_internal.h" />
@@ -204,9 +197,9 @@
     <ClInclude Include="src\gui\include\guitables.hpp" />
     <ClInclude Include="src\gui\include\guitools.hpp" />
     <ClInclude Include="src\gui\include\guiwidgets.hpp" />
-    <ClInclude Include="src\quant\math\rounding\rounding.hpp" />
     <ClInclude Include="src\quant\quant.hpp" />
     <ClInclude Include="src\quant\tables\tables.hpp" />
+    <ClInclude Include="src\quant\time\time.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\vendor\imgui\misc\debuggers\imgui.natvis" />

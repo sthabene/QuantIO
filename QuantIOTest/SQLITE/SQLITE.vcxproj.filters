@@ -18,27 +18,27 @@
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\database.cpp">
+    <ClCompile Include="src\connector\database.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\error.cpp">
+    <ClCompile Include="src\connector\error.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\sqlite.cpp">
+    <ClCompile Include="src\connector\sqlite.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\stmt.cpp">
+    <ClCompile Include="src\connector\stmt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\database.hpp">
+    <ClInclude Include="src\connector\include\database.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\error.hpp">
+    <ClInclude Include="src\connector\include\error.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\sqlite.hpp">
+    <ClInclude Include="src\connector\include\sqlite.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

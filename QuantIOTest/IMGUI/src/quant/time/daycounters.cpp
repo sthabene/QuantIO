@@ -1,9 +1,5 @@
 #pragma once
-#include "../quant.hpp"
-#include "time/daycounter.hpp"
-
-#include "boost/algorithm/string.hpp"
-#include "boost/format.hpp"
+#include "time.hpp"
 
 static std::string query = "SELECT COUNTER_ID, COUNTER_NAME, COUNTER_DESCR FROM DAY_COUNTER ORDER BY COUNTER_NAME";
 static std::string title = "DayCounter###";
@@ -18,6 +14,8 @@ static ImGuiTabItemFlags tabItemFlag = ImGuiTabItemFlags_None;
 static bool includeLast;
 static std::string yearFracStatus = "";
 static std::string dayFuncStatus = "";
+static std::string calendar = "";
+static std::vector<std::vector<std::string>> calendarList;
 
 //Day counter items
 float dayCountWidth = 0.f;
@@ -27,7 +25,6 @@ CustomDayCounter mainDayCounter;
 static int calsInit = 1;
 
 //IMGUI Display
-static ImVec2 buttonSz(25.0f * 5.0f, 32.0f); //To change 
 static unsigned int iRows = 0;
 static unsigned int iColumns = 0;
 
@@ -56,7 +53,7 @@ void QuantIODayCounters::DisplayContents() {
 		int displayRows = iRows;
 		std::vector<std::vector<std::string>> filteredData;
 		if (filter.IsActive()) {
-			for (int i = 1; i <= iRows; i++) {
+			for (std::size_t i = 1; i <= iRows; i++) {
 				std::string rowData = boost::algorithm::join(tableData[i], " ");
 				if (filter.PassFilter(rowData.c_str())) {
 					filteredData.push_back(tableData[i]);
@@ -148,9 +145,14 @@ void QuantIODayCounters::DisplayContents() {
 								currentRow->at(0);
 							selectedRow = QuantIO::dbConnection.getTableData2(openQuery.str(), false, false)[0];
 
-							includeLast = false;
-							mainDayCounter.setAnotherDayCounter(selectedRow[1], includeLast, selectedRow[3],
-								selectedRow[4]);
+							boost::format calListQuery = boost::format("SELECT CALENDAR_ID, CALENDAR_LABEL FROM CALENDAR ORDER BY CALENDAR_LABEL");
+
+							calendarList = QuantIO::dbConnection.getTableData2(calListQuery.str(), false, false);
+
+							CustomCalendar customCalendar = createCalendar(calendar);
+
+							mainDayCounter.setAnotherDayCounter(selectedRow[1], selectedRow[3], selectedRow[4], 
+								customCalendar);
 
 							openOpenPopup = true;
 						}
@@ -378,7 +380,7 @@ void QuantIODayCounters::DisplayContents() {
 											}
 											ImGui::EndChild();
 											
-											if (ImGui::Button("Validate")) {
+											if (ImGui::Button("Validate", buttonSz)) {
 												std::string result = ";r = dayCount(31, 30, 1, 1, 2021, 2023)";
 												lua_State* L = luaL_newstate();
 												luaL_openlibs(L);
@@ -388,7 +390,10 @@ void QuantIODayCounters::DisplayContents() {
 												lua_pushcfunction(L, daysBetweenLua);
 												lua_setglobal(L, "daysBetween");
 
-												printf("%s\n", (dayCountfunction + result).c_str());
+												lua_pushcfunction(L, businessDaysBetweenLua);
+												lua_setglobal(L, "businessDaysBetween");
+
+												//printf("%s\n", (dayCountfunction + result).c_str());
 
 												if (luaL_dostring(L, (dayCountfunction + result).c_str()) == LUA_OK) {
 													lua_getglobal(L, "r");
@@ -454,7 +459,7 @@ void QuantIODayCounters::DisplayContents() {
 											}
 											ImGui::EndChild();
 											
-											if (ImGui::Button("Validate")) {
+											if (ImGui::Button("Validate", buttonSz)) {
 
 												std::string functions = dayCountfunction + "; " + yearFracfunction;
 												std::string yearFracfooter = ";r = yearFraction(31, 30, 1, 1, 2021, 2023)";
@@ -467,6 +472,9 @@ void QuantIODayCounters::DisplayContents() {
 
 												lua_pushcfunction(L, daysBetweenLua);
 												lua_setglobal(L, "daysBetween");
+
+												lua_pushcfunction(L, businessDaysBetweenLua);
+												lua_setglobal(L, "businessDaysBetween");
 
 												if (luaL_dostring(L, (functions + yearFracfooter).c_str()) == LUA_OK) {
 													lua_getglobal(L, "r");
@@ -547,6 +555,31 @@ void QuantIODayCounters::DisplayContents() {
 									yearFractionResult = mainDayCounter.yearFraction(date1, date2);
 
 								}
+								ImGui::PopItemWidth();
+								if (dayCountfunction.find("businessDaysBetween") != std::string::npos) {
+									ImGui::Dummy(ImVec2(0.0f, 5.0f));
+									ImGui::AlignTextToFramePadding();
+									ImGui::TextUnformatted("Calendar: ");
+									ImGui::SameLine(0.f, 150.0f - ImGui::CalcTextSize("Calendar: ").x);
+
+									static int currentCalIndex = 0;
+									std::string currentCal = calendarList[currentCalIndex][1];
+									ImGui::PushItemWidth(35.0f * 3.5f);
+									if (ImGui::BeginCombo("##SelectCal", currentCal.c_str())) {
+										for (std::size_t n = 0; n < calendarList.size(); n++) {
+											const bool isSelected = (currentCalIndex == n);
+											if (ImGui::Selectable(calendarList[n][1].c_str(), isSelected)) {
+												currentCalIndex = n;
+											}
+											if (isSelected) {
+												ImGui::SetItemDefaultFocus();
+											}
+										}
+										ImGui::EndCombo();
+									}
+									ImGui::PopItemWidth();
+								}
+
 								ImGui::Unindent(40.0f);
 								ImGui::Dummy(ImVec2(0.0f, 20.0f));
 								ImGui::TextDisabled("Results");
@@ -556,7 +589,8 @@ void QuantIODayCounters::DisplayContents() {
 								ImGui::Indent(40.0f);
 								ImGui::TextUnformatted("Day Count:");
 								ImGui::SameLine(0.f, 150.0f - ImGui::CalcTextSize("Day Count:").x);
-								ImGui::InputText("##DayCount", (char*)std::to_string(abs(dayCountResult)).c_str(), 8,
+								ImGui::PushItemWidth(35.0f * 3.5f);
+								ImGui::InputText("##DayCount", (char*)std::to_string(dayCountResult).c_str(), 8,
 									ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
 								
 
@@ -565,10 +599,10 @@ void QuantIODayCounters::DisplayContents() {
 								ImGui::TextUnformatted("Year Fraction:");
 								ImGui::SameLine(0.f, 150.0f - ImGui::CalcTextSize("Year Fraction:").x);
 								ImGui::InputText("##YearFraction", 
-									(char*)std::to_string(abs(yearFractionResult)).c_str(), 8,
+									(char*)std::to_string(yearFractionResult).c_str(), 8,
 									ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
 								
-
+								ImGui::PopItemWidth();
 								ImGui::Unindent(40.0f);
 								ImGui::Spacing();
 								ImGui::EndTabItem();
@@ -579,14 +613,14 @@ void QuantIODayCounters::DisplayContents() {
 						ImGui::SetCursorPosY(1050 - 1.5f * buttonSz.y);
 
 						ImGui::Separator();
-						if (ImGui::Button("Close")) {
+						if (ImGui::Button("Close", buttonSz)) {
 							ImGui::CloseCurrentPopup();
 							openOpenPopup = false;
 						}
 
 						if (popupInputFlags == ImGuiInputTextFlags_None) {
-							ImGui::SameLine(ImGui::CalcTextSize("Close").x + 30.0f);
-							if (ImGui::Button("Save")) {
+							ImGui::SameLine();
+							if (ImGui::Button("Save", buttonSz)) {
 								ImGui::CloseCurrentPopup();
 								openOpenPopup = false;
 							}

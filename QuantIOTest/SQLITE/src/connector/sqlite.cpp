@@ -1,5 +1,5 @@
-#include "../include/sqlite.hpp"
-#include "../include/error.hpp"
+#include "include/sqlite.hpp"
+#include "include/error.hpp"
 
 namespace QuantIO {
     Connection::Connection(const std::string & filename) {
@@ -16,7 +16,7 @@ namespace QuantIO {
         sqlite3_close(db_);
     }
 
-    Connection::Connection(Connection && other): db_{other.db_} {
+    /*Connection::Connection(Connection && other): db_{other.db_} {
         other.db_ = nullptr;
     }
 
@@ -27,15 +27,11 @@ namespace QuantIO {
             other.db_ = nullptr;
         }
         return *this;
-    }
+    }*/
 
     Connection::Stmt Connection::create_statement(const std::string & sql) {
         return Stmt(sql, *this);
     }
-
-  /*  int Connection::create_another_statement(const std::string& sql) {
-        return sqlite3_prepare_v2(db_, sql.c_str(), -1, stmt_, NULL);
-    };*/
 
     void Connection::exec(const std::string & sql, int (*callback)(void *, int, char **, char **), void * arg) {
         char * err_msg = nullptr;
@@ -111,4 +107,73 @@ namespace QuantIO {
     sqlite3_stmt * Connection::Stmt::get_c_obj() {
         return stmt_;
     }
+
+    std::vector<std::vector<std::string>> Connection::getTableData2(const std::string& sql, bool header,
+        bool transpose) {
+        //Prepared statement
+        Stmt statement(sql, *this);
+        printf("%s;\n", sql.c_str());
+
+        //Stores the table return data
+        const std::size_t columns = statement.get_col_count();
+        std::vector<std::vector<std::string>> tableVec;
+
+        if (header) {
+            std::vector<std::string> v0; //Header
+            v0.reserve(columns);
+            for (std::size_t column = 0; column < columns; column++) {
+                v0.push_back(statement.get_col_name(column));
+            }
+            tableVec.push_back(v0);
+        }
+
+        std::string data;
+        while (statement.step()) {
+            std::vector<std::string> v1;
+            v1.reserve(columns);
+            for (std::size_t column = 0; column < columns; column++) {
+                data = statement.get_col<std::string>(column);
+                v1.push_back(data.empty() ? "" : data);
+            }
+            tableVec.push_back(v1);
+        }
+        statement.reset();
+
+        if (transpose && tableVec.size() > 0) {
+            std::vector<std::vector<std::string>> tresult(
+                tableVec[0].size(), std::vector<std::string>(tableVec.size())
+            );
+            for (std::vector<std::string>::size_type i = 0; i < tableVec[0].size(); i++) {
+                for (std::vector<std::string>::size_type j = 0; j < tableVec.size(); j++) {
+                    tresult[i][j] = tableVec[j][i];
+                }
+            }
+            tableVec = tresult;
+        }
+        return tableVec;
+    };
+
+
+    void Connection::updateData(const std::string& sql) {
+        //Prepared statement
+        Stmt statement(sql, *this);
+        printf("%s;\n", sql.c_str());
+        statement.step();
+        
+        //this->commit();
+        statement.reset();
+    };
+
+    void Connection::deleteData(const std::string& sql) {
+        //Prepared statement
+        printf("%s;\n", sql.c_str());
+
+        std::string delSql = sql + ";COMMIT;";
+
+        Stmt statement(delSql, *this);
+        statement.step();
+
+        statement.reset();
+    };
+
 };
