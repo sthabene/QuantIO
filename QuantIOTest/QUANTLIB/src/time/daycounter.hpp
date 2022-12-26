@@ -13,6 +13,11 @@ public:
 		std::string m_dayCountFunction;
 		std::string m_yearFractionFunction;
 		std::string name() const override;
+
+
+		//Extra variables
+
+
 		//number of days between two dates
 		QuantLib::Date::serial_type dayCount(const QuantLib::Date& d1, const QuantLib::Date& d2) const override;
 		//the period between two dates as a fraction of year

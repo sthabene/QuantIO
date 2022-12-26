@@ -149,7 +149,7 @@ void QuantIODayCounters::DisplayContents() {
 
 							calendarList = QuantIO::dbConnection.getTableData2(calListQuery.str(), false, false);
 
-							CustomCalendar customCalendar = createCalendar(calendar);
+							CustomCalendar customCalendar = createCalendar(calendarList[0][0]);
 
 							mainDayCounter.setAnotherDayCounter(selectedRow[1], selectedRow[3], selectedRow[4], 
 								customCalendar);
@@ -206,72 +206,50 @@ void QuantIODayCounters::DisplayContents() {
 						ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings)) {
 
 						ImGui::SetCursorPosX(1100.0f);
+						ImGui::AlignTextToFramePadding();
+						ImGui::TextUnformatted("Id:");
+						ImGui::SameLine();
 						ImGui::PushItemWidth(ImGui::CalcTextSize(selectedRow[0].c_str()).x + 15.0f);
-						ImGui::InputText(" Id", (char*)selectedRow[0].c_str(), 4,
+						ImGui::InputText("##Id", (char*)selectedRow[0].c_str(), 4,
 							ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
 						ImGui::PopItemWidth();
 						ImGui::Spacing();
 
 						float titleWidth = ImGui::CalcTextSize(selectedRow[1].c_str()).x + 15.0f;
-						float descrWidth = ImGui::CalcTextSize(selectedRow[2].c_str()).x > 1000 ? 1000 : 
-						ImGui::CalcTextSize(selectedRow[2].c_str()).x + 15.0f;
+						float descrWidth = ImGui::CalcTextSize(selectedRow[2].c_str()).x > 1000 ? 1000 : ImGui::CalcTextSize(selectedRow[2].c_str()).x + 15.0f;
+
+						ImGui::Dummy(ImVec2(0.0f, 5.0f));
+						ImGui::SetCursorPosX(600.0f - (ImGui::CalcTextSize("Label").x + 50.0f) * 0.5f);
+						ImGui::TextDisabled("Label");
 
 						ImGui::SetCursorPosX(600.0f - (titleWidth + 50.0f) * 0.5f);
 						ImGui::PushItemWidth(titleWidth);
-						ImGui::InputText("##DayCounter", (char*)selectedRow[1].c_str(), 32,
+						ImGui::InputText("##DayCounterLabel", (char*)selectedRow[1].c_str(), 32,
 							ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
 						ImGui::PopItemWidth();
 
-
-						ImGui::Dummy(ImVec2(0.0f, 15.0f));
+						ImGui::Dummy(ImVec2(0.0f, 5.0f));
 						ImGui::SetCursorPosX(600.0f - (ImGui::CalcTextSize("Description").x + 50.0f) * 0.5f);
 						ImGui::TextDisabled("Description");
 
 						ImGui::SetCursorPosX(600.0f - (descrWidth + 50.0f) * 0.5f);
-						//ImGui::PushItemWidth(descrWidth);
 						ImGui::InputTextMultiline("##Description", (char*)selectedRow[2].c_str(), 255,
-							ImVec2(descrWidth, 35.0f),
-							ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
-						//ImGui::PopItemWidth();
-						/*ImGui::Dummy(ImVec2(0.0f, 15.0f));
-
-						ImGui::Separator();
+							ImVec2(descrWidth, 35.0f), ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
 
 						ImGui::Dummy(ImVec2(0.0f, 15.0f));
-
-						ImGui::SetCursorPosX(600.0f - (ImGui::CalcTextSize("Include Last").x * 0.5f + 50.0f));
-
-						if (ImGui::Checkbox("Include Last", &includeLast)) {
-							if (includeLast) {
-								mainDayCounter.setAnotherDayCounter(selectedRow[1], includeLast, selectedRow[3],
-									selectedRow[4]);
-								calsInit++;
-							}
-							else {
-								mainDayCounter.setAnotherDayCounter(selectedRow[1], includeLast, selectedRow[3],
-									selectedRow[4]);
-								calsInit++;
-							}
-						};
-
-						ImGui::SameLine(0.0f, 20.0f);
-						HelpMarker("Whether to include the last day in the calculation");*/
-
-						/*ImGui::Dummy(ImVec2(0.0f, 5.0f));
-						ImGui::SetCursorPosX(600.0f - (ImGui::CalcTextSize("Year Fraction XXX").x * 0.5f + 40.0f));
-
-						static std::string yearFrac = "365";
-						ImGui::PushItemWidth(ImGui::CalcTextSize("X").x * 4.0f);
-						ImGui::InputText("Year Fraction", (char*)yearFrac.c_str(), 8,
-							ImGuiInputTextFlags_AutoSelectAll);
-						ImGui::PopItemWidth();
-						ImGui::SameLine(0.0f, 20.0f);
-						HelpMarker("Number of days to use as denominator");*/
-						ImGui::Dummy(ImVec2(0.0f, 15.0f));
-
 						ImGui::Separator();
 
-						//ImGui::Dummy(ImVec2(0.0f, 15.0f));
+						ImGui::Dummy(ImVec2(0.0f, 10.0f));
+
+						bool code = false;
+						ImGui::SetCursorPosX(600.0f - ImGui::CalcTextSize("Code:").x - 30.0f);
+						ImGui::AlignTextToFramePadding();
+						ImGui::TextUnformatted("Code:");
+						ImGui::SameLine();
+						ImGui::Checkbox("##Code", &code);
+						ImGui::SameLine();
+						HelpMarker("Use code or the function");
+						ImGui::Dummy(ImVec2(0.0f, 10.0f));
 
 						std::string dayCountfunction = selectedRow[3];
 						std::string yearFracfunction = selectedRow[4];
@@ -316,13 +294,116 @@ void QuantIODayCounters::DisplayContents() {
 							"dayCount (Day1, Day2, Month1, Month2, Year1, Year2)",
 							"yearFraction (Day1, Day2, Month1, Month2, Year1, Year2)"};
 
-						if (ImGui::BeginTabBar("DayCounterTabBar", ImGuiTabBarFlags_None)) {
+						std::vector<std::string> dayCountOptions = { "Actual", "Business Days", 
+						"30", "30_US", "30_ISMA", "30_EU", "30_IT", "30_NASD", "30_BASIC", "One"};
 
-							if (ImGui::BeginTabItem("Formula", NULL, tabItemFlag)) {
-								static const char* configItems[] = { "Day Count", "Year Fraction" };
+						const char* denominator[] = { "180", "252", "360", "364", "365", "365.25", "366", "Actual", "One", "Custom" };
+
+						if (ImGui::BeginTabBar("DayCounterTabBar", ImGuiTabBarFlags_None)) {
+							static const char* configItems[] = { "Day Count", "Year Fraction" };
+							if (ImGui::BeginTabItem("Function", NULL, tabItemFlag)) {
+								ImGui::BeginChild("##DayCountRight", ImVec2(0.f, -1.6f * buttonSz.y), false, 
+									ImGuiWindowFlags_HorizontalScrollbar);
+								{
+									ImGui::Dummy(ImVec2(0.0f, 10.0f));
+									ImGui::TextDisabled("Day Count");
+									ImGui::Separator();
+									ImGui::Dummy(ImVec2(0.0f, 5.0f));
+									ImGui::Indent(50.0f);
+
+									ImGui::AlignTextToFramePadding();
+									ImGui::TextUnformatted("Day Count: ");
+									ImGui::SameLine(0.f, 150.0f - ImGui::CalcTextSize("Day Count: ").x);
+
+									static int dayCountOpIndex = 0;
+									static bool inclusive = false;
+									static bool noLeapYear = false;
+									static int numeratorNum = 0;
+									static int denominatorNum = 0;
+									static char denominatorCustomValue[32] = { '\0' };
+
+									if (openOpenPopup) {
+										dayCountOpIndex = 0;
+										inclusive = false;
+										noLeapYear = false;
+										numeratorNum = 0;
+										denominatorNum = 0;
+										sprintf(denominatorCustomValue, "%s", "365\0");
+									}
+
+									std::string currentDayCount = dayCountOptions[dayCountOpIndex];
+									ImGui::PushItemWidth(35.0f * 7.5f);
+									if (ImGui::BeginCombo("##SelectDayCount", currentDayCount.c_str())) {
+										for (std::size_t n = 0; n < dayCountOptions.size(); n++) {
+											const bool isSelected = (dayCountOpIndex == n);
+											if (ImGui::Selectable(dayCountOptions[n].c_str(), isSelected)) {
+												if (dayCountOpIndex != n) {
+															
+												}
+												dayCountOpIndex = n;
+											}
+											if (isSelected) {
+												ImGui::SetItemDefaultFocus();
+											}
+										}
+										ImGui::EndCombo();
+									}
+									ImGui::PopItemWidth();
+
+									ImGui::AlignTextToFramePadding();
+									ImGui::TextUnformatted("Inclusive: ");
+									ImGui::SameLine(0.f, 150.0f - ImGui::CalcTextSize("Inclusive: ").x);
+									ImGui::Checkbox("##Inclusive", &inclusive);
+
+									ImGui::AlignTextToFramePadding();
+									ImGui::TextUnformatted("No Leap Year: ");
+									ImGui::SameLine(0.f, 150.0f - ImGui::CalcTextSize("No Leap Year: ").x);
+									ImGui::Checkbox("##NoLeapYear", &noLeapYear);
+
+									ImGui::Unindent(50.0f);
+
+									ImGui::Dummy(ImVec2(0.0f, 100.0f));
+									ImGui::TextDisabled("Year Fraction");
+									ImGui::Separator();
+
+									ImGui::Dummy(ImVec2(0.0f, 5.0f));
+									ImGui::Indent(50.0f);
+
+									ImGui::AlignTextToFramePadding();
+									ImGui::TextUnformatted("Numerator: ");
+									ImGui::SameLine(0.f, 150.0f - ImGui::CalcTextSize("Numerator: ").x);
+									ImGui::PushItemWidth(35.0f * 7.5f);
+									ImGui::Combo("###Numerator", &numeratorNum, "Day Count\0\0");
+									ImGui::PopItemWidth();
+
+									ImGui::AlignTextToFramePadding();
+									ImGui::TextUnformatted("Denominator: ");
+									ImGui::SameLine(0.f, 150.0f - ImGui::CalcTextSize("Denominator: ").x);
+									ImGui::PushItemWidth(35.0f * 7.5f);
+									ImGui::Combo("##Denominator", &denominatorNum, denominator, 
+										IM_ARRAYSIZE(denominator));
+									ImGui::PopItemWidth();
+									if (denominatorNum == 6) {										
+										ImGui::SameLine();
+										ImGui::PushItemWidth(35.0f * 3.5f);
+										ImGui::InputText("##DenominatorCustom", denominatorCustomValue, 32,
+											ImGuiInputTextFlags_CallbackCharFilter, QuantIO::NumericFilter::Filter);
+										ImGui::PopItemWidth();
+									}
+
+									ImGui::Unindent(50.0f);
+
+								}
+								ImGui::EndChild();
+
+								ImGui::EndTabItem();
+							}
+
+							if (ImGui::BeginTabItem("Code", NULL)) {
+								
 								static int selected = 0;
 								{ //Left
-									ImGui::BeginChild("Left pane", ImVec2(150, -1.5f * buttonSz.y), true);
+									ImGui::BeginChild("Left pane", ImVec2(150, -1.6f * buttonSz.y), true);
 									for (int i = 0; i < IM_ARRAYSIZE(configItems); i++) {
 										char label[32];
 										sprintf(label, configItems[i]);
@@ -340,7 +421,7 @@ void QuantIODayCounters::DisplayContents() {
 										{
 											float availableRegion = ImGui::GetContentRegionAvail().x * 0.75f;
 											ImGui::BeginChild("##DayCountLeft",
-												ImVec2(availableRegion, -1.5f * buttonSz.y),
+												ImVec2(availableRegion, -1.6f * buttonSz.y),
 												false, ImGuiWindowFlags_HorizontalScrollbar);
 											{
 												ImGui::SetScrollY(ImGui::GetScrollMaxY());
@@ -352,7 +433,7 @@ void QuantIODayCounters::DisplayContents() {
 											}
 											ImGui::EndChild();
 											ImGui::SameLine(0.0f, 5.0f);
-											ImGui::BeginChild("##EditRight", ImVec2(0.0f, -1.5f * buttonSz.y), true,
+											ImGui::BeginChild("##EditRight", ImVec2(0.0f, -1.6f * buttonSz.y), true,
 												ImGuiWindowFlags_HorizontalScrollbar);
 											{
 												static int inputOpt = 1;
@@ -420,7 +501,7 @@ void QuantIODayCounters::DisplayContents() {
 										{
 
 											ImGui::BeginChild("##YearFracLeft",
-												ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, -1.5f * buttonSz.y),
+												ImVec2(ImGui::GetContentRegionAvail().x * 0.75f, -1.6f * buttonSz.y),
 												false, ImGuiWindowFlags_HorizontalScrollbar);
 											{
 												if (ImGui::InputTextMultiline("##YearFracCode", 
@@ -431,7 +512,7 @@ void QuantIODayCounters::DisplayContents() {
 											}
 											ImGui::EndChild();
 											ImGui::SameLine(0.0f, 5.0f);
-											ImGui::BeginChild("##YearFracRight", ImVec2(0.0f, -1.5f * buttonSz.y), true,
+											ImGui::BeginChild("##YearFracRight", ImVec2(0.0f, -1.6f * buttonSz.y), true,
 												ImGuiWindowFlags_HorizontalScrollbar);
 											{
 												static int inputOpt = 1;
@@ -563,12 +644,25 @@ void QuantIODayCounters::DisplayContents() {
 									ImGui::SameLine(0.f, 150.0f - ImGui::CalcTextSize("Calendar: ").x);
 
 									static int currentCalIndex = 0;
+
+									if (openOpenPopup) {
+										currentCalIndex = 0;
+									}
+
 									std::string currentCal = calendarList[currentCalIndex][1];
 									ImGui::PushItemWidth(35.0f * 3.5f);
 									if (ImGui::BeginCombo("##SelectCal", currentCal.c_str())) {
 										for (std::size_t n = 0; n < calendarList.size(); n++) {
 											const bool isSelected = (currentCalIndex == n);
 											if (ImGui::Selectable(calendarList[n][1].c_str(), isSelected)) {
+												if (currentCalIndex != n) {
+													CustomCalendar anotherCustomCalendar = createCalendar(
+														calendarList[n][0]);
+													mainDayCounter.setAnotherDayCounter(selectedRow[1], 
+														selectedRow[3], selectedRow[4],
+														anotherCustomCalendar);
+													calsInit++;
+												}
 												currentCalIndex = n;
 											}
 											if (isSelected) {
@@ -610,7 +704,7 @@ void QuantIODayCounters::DisplayContents() {
 							ImGui::EndTabBar();
 						}
 
-						ImGui::SetCursorPosY(1050 - 1.5f * buttonSz.y);
+						ImGui::SetCursorPosY(1050 - 1.6f * buttonSz.y);
 
 						ImGui::Separator();
 						if (ImGui::Button("Close", buttonSz)) {

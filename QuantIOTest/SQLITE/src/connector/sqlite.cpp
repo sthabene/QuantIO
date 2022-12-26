@@ -159,9 +159,10 @@ namespace QuantIO {
         Stmt statement(sql, *this);
         printf("%s;\n", sql.c_str());
         statement.step();
-        
-        //this->commit();
+
         statement.reset();
+                
+        //this->commit();
     };
 
     void Connection::deleteData(const std::string& sql) {

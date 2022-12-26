@@ -300,15 +300,37 @@ void QuantIOCurrency::DisplayContents() {
 					if (ImGui::BeginPopupModal(title.c_str(), NULL, ImGuiWindowFlags_NoResize |ImGuiWindowFlags_NoSavedSettings)) {
 						
 						
-						ImGui::SetCursorPosX(680.0f);
+						ImGui::SetCursorPosX(660.0f);
+						ImGui::AlignTextToFramePadding();
+						ImGui::TextUnformatted("Code:");
+						ImGui::SameLine();
 						ImGui::PushItemWidth(ImGui::CalcTextSize(selectedRow[0].c_str()).x + 15.0f);
-						ImGui::InputText(" Code", (char*)selectedRow[0].c_str(), 4,
+						ImGui::InputText("##Code", (char*)selectedRow[0].c_str(), 4,
 							ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
 						ImGui::PopItemWidth();
 						ImGui::Spacing();
 
 
+						static float nameLabelWidth = ImGui::CalcTextSize("Name:").x;
+						static float codeLabelWidth = ImGui::CalcTextSize("Numeric code:").x;
+						static float symbolLabelWidth = ImGui::CalcTextSize("Symbol:").x;
+						static float fractionLabelWidth = ImGui::CalcTextSize("Fraction Symbol:").x;
+						static float fractionUnitLabelWidth = ImGui::CalcTextSize("Fractions Per Unit:").x;
+						static float triangualtionLabelWidth = ImGui::CalcTextSize("Triangualtion:").x;
+
+						float nameWidth = ImGui::CalcTextSize(selectedRow[1].c_str()).x + 15.0f;
+						float codeWidth = ImGui::CalcTextSize(selectedRow[2].c_str()).x + 15.0f;
+						float symbolWidth = ImGui::CalcTextSize(selectedRow[3].c_str()).x + 15.0f;
+						float fractionWidth = ImGui::CalcTextSize(selectedRow[4].c_str()).x + 15.0f;
+						float triangualtionWidth = ImGui::CalcTextSize(selectedRow[7].c_str()).x + 15.0f;
+
+						///
+
 						float titleWidth = ImGui::CalcTextSize(selectedRow[1].c_str()).x + 15.0f;
+						float descWidth = ImGui::CalcTextSize(selectedRow[5].c_str()).x + 15.0f;
+						float regionWidth = ImGui::CalcTextSize(selectedRow[2].c_str()).x + 15.0f;
+
+						ImGui::Dummy(ImVec2(0.0f, 35.0f));	
 
 						ImGui::SetCursorPosX(400.0f - (titleWidth + 50.0f) * 0.5f);
 						ImGui::PushItemWidth(titleWidth);
@@ -316,26 +338,9 @@ void QuantIOCurrency::DisplayContents() {
 							ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
 						ImGui::PopItemWidth();
 
-						ImGui::Dummy(ImVec2(0.0f, 35.0f));
-
-						ImGui::Separator();
-						
-						
-						
-						
-						/*ImGui::Spacing();
-						ImGui::SetCursorPosX(400 - ImGui::CalcTextSize("Details").x * 0.5f);
-						ImGui::TextDisabled("Details");
-						ImGui::Spacing();*/
 						
 						ImGui::Indent(180.0f);
 						ImGui::PushItemWidth(rowHeight * 10.0f);
-						//Open modal details
-						/*ImGui::InputText("Code", (char*)selectedRow[0].c_str(), 32,
-							ImGuiInputTextFlags_CharsUppercase | ImGuiDir_Left | popupInputFlags);
-						
-						ImGui::InputText("Name", (char*)selectedRow.at(1).c_str(), 32,
-							popupInputFlags);*/
 
 						ImGui::InputText("Numeric code", (char*)selectedRow.at(2).c_str(), 32,
 							popupInputFlags | ImGuiInputTextFlags_CharsDecimal);
@@ -511,7 +516,7 @@ void QuantIOCurrency::DisplayContents() {
 
 									ImGui::Unindent(60.0f);
 
-									ImGui::SetCursorPosY(400 - 1.5f * buttonSz.y);
+									ImGui::SetCursorPosY(400 - 1.6f * buttonSz.y);
 									ImGui::Separator();
 
 									if (ImGui::Button("Close")) {
@@ -608,7 +613,7 @@ void QuantIOCurrency::DisplayContents() {
 
 									ImGui::Unindent(60.0f);
 
-									ImGui::SetCursorPosY(400 - 1.5f * buttonSz.y);
+									ImGui::SetCursorPosY(400 - 1.6f * buttonSz.y);
 									ImGui::Separator();
 
 									if (ImGui::Button("Close")) {
@@ -691,7 +696,7 @@ void QuantIOCurrency::DisplayContents() {
 						}
 
 						//Close button
-						ImGui::SetCursorPosY(700 - 1.5f * buttonSz.y);
+						ImGui::SetCursorPosY(700 - 1.6f * buttonSz.y);
 
 						ImGui::Separator();
 						//if (ImGui::Button("Add another modal.."))

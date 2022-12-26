@@ -165,8 +165,6 @@ void QuantIOCalendars::DisplayContents() {
 
 							mainCalendar.setAnotherCalendar(currentRow->at(1), selectedRow.at(4)); 
 
-							
-
 							if (returnedHolidays.size() > 0) {
 								mainCalendar.addHolidays(returnedHolidays[0]);
 							}
@@ -231,39 +229,44 @@ void QuantIOCalendars::DisplayContents() {
 					if (ImGui::BeginPopupModal(title.c_str(), NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings)) {
 
 						ImGui::SetCursorPosX(900.0f);
+						ImGui::AlignTextToFramePadding();
+						ImGui::TextUnformatted("Id:");
+						ImGui::SameLine();
 						ImGui::PushItemWidth(ImGui::CalcTextSize(selectedRow[0].c_str()).x + 15.0f);
-						ImGui::InputText(" Id", (char*)selectedRow[0].c_str(), 4,
+						ImGui::InputText("##Id", (char*)selectedRow[0].c_str(), 4,
 							ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
 						ImGui::PopItemWidth();
 						ImGui::Spacing();
 
-						static float titleLabelWidth = ImGui::CalcTextSize("Calendar Label:").x;
-						static float descLabelWidth = ImGui::CalcTextSize("Description:").x;
-						static float regionLabelWidth = ImGui::CalcTextSize("Region:").x;
-
+						static float titleLabelWidth = ImGui::CalcTextSize("Label:").x;
 						float titleWidth = ImGui::CalcTextSize(selectedRow[1].c_str()).x + 15.0f;
-						float descWidth = ImGui::CalcTextSize(selectedRow[5].c_str()).x + 15.0f;
-						float regionWidth = ImGui::CalcTextSize(selectedRow[2].c_str()).x + 15.0f;
-
 						ImGui::SetCursorPosX(500.0f - titleLabelWidth - 30.0f);
 						ImGui::AlignTextToFramePadding();
-						ImGui::TextUnformatted("Calendar Label:");
+						ImGui::TextUnformatted("Label:");
 						ImGui::SameLine();
 						ImGui::PushItemWidth(titleWidth);
-						ImGui::InputText("##Calendar1", (char*)selectedRow[1].c_str(), 32,
+						ImGui::InputText("##CalendarLabel", (char*)selectedRow[1].c_str(), 32,
 							ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
 						ImGui::PopItemWidth();
 
-
-						ImGui::SetCursorPosX(500.0f - descLabelWidth - 30.0f);
+						static float descrLabelWidth = ImGui::CalcTextSize("Description:").x;
+						float descrWidth = ImGui::CalcTextSize(selectedRow[5].c_str()).x + 15.0f;
+						ImGui::SetCursorPosX(500.0f - descrLabelWidth - 30.0f);
 						ImGui::AlignTextToFramePadding();
 						ImGui::TextUnformatted("Description:");
 						ImGui::SameLine();
-						ImGui::PushItemWidth(descWidth);
-						ImGui::InputText("##CalendarDesc", (char*)selectedRow[5].c_str(), 32,
-							ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
+						ImGui::PushItemWidth(descrWidth);
+						ImGui::InputTextMultiline("##Description", (char*)selectedRow[5].c_str(), 255,
+							ImVec2(descrWidth, 35.0f), ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
 						ImGui::PopItemWidth();
 
+						ImGui::Dummy(ImVec2(0.0f, 15.0f));
+						ImGui::Separator();
+
+						ImGui::Dummy(ImVec2(0.0f, 15.0f));
+
+						static float regionLabelWidth = ImGui::CalcTextSize("Region:").x;
+						float regionWidth = ImGui::CalcTextSize(selectedRow[2].c_str()).x + 15.0f;
 						ImGui::SetCursorPosX(500.0f - regionLabelWidth - 30.0f);
 						ImGui::AlignTextToFramePadding();
 						ImGui::TextUnformatted("Region:");
@@ -272,36 +275,6 @@ void QuantIOCalendars::DisplayContents() {
 						ImGui::InputText("##CalendarRegion", (char*)selectedRow[2].c_str(), 32,
 							ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
 						ImGui::PopItemWidth();
-						ImGui::Dummy(ImVec2(0.0f, 15.0f));
-
-					
-						/*ImGui::SetCursorPosX( 500.0f - (titleWidth + 50.0f) * 0.5f);
-						ImGui::PushItemWidth(titleWidth);
-						ImGui::InputText("##Calendar", (char*)selectedRow[1].c_str(), 32,
-							ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
-						ImGui::PopItemWidth();*/
-
-						//ImGui::SetCursorPosX(500.0f - (descWidth + 50.0f) * 0.5f);
-						//ImGui::PushItemWidth(descWidth);
-						//ImGui::InputText("##CalendarDesc", (char*)selectedRow[5].c_str(), 32,
-						//	ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
-						//ImGui::PopItemWidth();
-
-						////ImGui::SameLine();
-						////ImGui::TextUnformatted(" - ");
-						////ImGui::SameLine();
-
-						//ImGui::SetCursorPosX(500.0f - (regionWidth + 50.0f) * 0.5f);
-						//ImGui::PushItemWidth(regionWidth);
-						//ImGui::InputText("##CalendarRegion", (char*)selectedRow[2].c_str(), 32,
-						//	ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
-						//ImGui::PopItemWidth();
-
-						ImGui::Dummy(ImVec2(0.0f, 15.0f));
-
-						ImGui::Separator();
-
-						ImGui::Dummy(ImVec2(0.0f, 15.0f));
 
 						bool join = selectedRow[6] == "1";
 						ImGui::SetCursorPosX(500.0f - ImGui::CalcTextSize("Join:").x - 30.0f);
@@ -638,7 +611,7 @@ void QuantIOCalendars::DisplayContents() {
 						}
 
 
-						ImGui::SetCursorPosY(1100 - 1.5f * buttonSz.y);
+						ImGui::SetCursorPosY(1100 - 1.6f * buttonSz.y);
 
 						ImGui::Separator();
 						if (ImGui::Button("Close", buttonSz)) {
@@ -725,7 +698,7 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 				currentDate.tm_mday = 1;
 				RecalculateDate(currentDate);
 				//holidaysToShow = 3;
-				boost::format holQuery = boost::format("SELECT HOLIDAY_ID, DATE, HOLIDAY_DESC FROM HOLIDAYS WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%2%-12-31')") % calendarId % (1900 + today.tm_year);
+				boost::format holQuery = boost::format("SELECT HOLIDAY_ID, DATE, HOLIDAY_DESC, CALENDAR FROM HOLIDAYS WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%2%-12-31')") % calendarId % (1900 + today.tm_year);
 				holidays = QuantIO::dbConnection.getTableData2(holQuery.str(), false);
 				sprintf(currentDateText, "%04d-%02d-%02d", dateOut.tm_year + 1900, dateOut.tm_mon + 1, dateOut.tm_mday);
 				sprintf(oldDateText, currentDateText);
@@ -1239,31 +1212,41 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 		static time_t now = time(NULL);
 		static tm today = *localtime(&now);
 
+		static bool triggerHolidays0 = false;
+		static bool triggerHolidays1 = false;
+		static bool triggerHolidays2 = false;
+		static bool triggerHolidays3 = false;
+
 		//Calendar holidays list
-		if (ImGui::RadioButton(std::to_string(1900 + today.tm_year - 1).c_str(), &holidaysToShow, 1)) {
+		if (ImGui::RadioButton(std::to_string(1900 + today.tm_year - 1).c_str(), &holidaysToShow, 1) || triggerHolidays1) {
 			static int year = (1900 + today.tm_year - 1) < 1970 ? 1970 : (1900 + today.tm_year - 1);
-			boost::format holQuery2 = boost::format("SELECT HOLIDAY_ID, DATE, HOLIDAY_DESC FROM HOLIDAYS WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%2%-12-31')") % calendarId % year;
+			boost::format holQuery2 = boost::format("SELECT HOLIDAY_ID, DATE, HOLIDAY_DESC, CALENDAR FROM HOLIDAYS WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%2%-12-31')") % calendarId % year;
 			holidays = QuantIO::dbConnection.getTableData2(holQuery2.str(), false);
 		}; 
 		ImGui::SameLine();
-		if (ImGui::RadioButton(std::to_string(1900 + today.tm_year).c_str(), &holidaysToShow, 3)) {
+		if (ImGui::RadioButton(std::to_string(1900 + today.tm_year).c_str(), &holidaysToShow, 3) || triggerHolidays3) {
 			static int year = (1900 + today.tm_year) < 1970 ? 1970 : (1900 + today.tm_year);
-			boost::format holQuery1 = boost::format("SELECT HOLIDAY_ID, DATE, HOLIDAY_DESC FROM HOLIDAYS WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%2%-12-31')") % calendarId % year;
+			boost::format holQuery1 = boost::format("SELECT HOLIDAY_ID, DATE, HOLIDAY_DESC, CALENDAR FROM HOLIDAYS WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%2%-12-31')") % calendarId % year;
 			holidays = QuantIO::dbConnection.getTableData2(holQuery1.str(), false);
 		};	
 		ImGui::SameLine();
-		if (ImGui::RadioButton(std::to_string(1900 + today.tm_year + 1).c_str(), &holidaysToShow, 2)) {
+		if (ImGui::RadioButton(std::to_string(1900 + today.tm_year + 1).c_str(), &holidaysToShow, 2) || triggerHolidays2) {
 			static int year = (1900 + today.tm_year + 1) < 1970 ? 1970 : (1900 + today.tm_year + 1);
-			boost::format holQuery3 = boost::format("SELECT HOLIDAY_ID, DATE, HOLIDAY_DESC FROM HOLIDAYS WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%2%-12-31')") % calendarId % year;
+			boost::format holQuery3 = boost::format("SELECT HOLIDAY_ID, DATE, HOLIDAY_DESC, CALENDAR FROM HOLIDAYS WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%2%-12-31')") % calendarId % year;
 			holidays = QuantIO::dbConnection.getTableData2(holQuery3.str(), false);
 		}; 
 		ImGui::SameLine();
-		if (ImGui::RadioButton("Next 10yrs", &holidaysToShow, 0)) {
+		if (ImGui::RadioButton("Next 10yrs", &holidaysToShow, 0) || triggerHolidays0) {
 			static int year1 = (1900 + today.tm_year + 2) < 1970 ? 1970 : (1900 + today.tm_year + 2);
 			static int year2 = (1900 + today.tm_year + 12) < 1970 ? 1970 : (1900 + today.tm_year + 12);
-			boost::format holQuery3 = boost::format("SELECT HOLIDAY_ID, DATE, HOLIDAY_DESC FROM HOLIDAYS WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%3%-12-31')") % calendarId % year1 % year2;
+			boost::format holQuery3 = boost::format("SELECT HOLIDAY_ID, DATE, HOLIDAY_DESC, CALENDAR FROM HOLIDAYS WHERE CALENDAR = %1% AND DATE BETWEEN DATE('%2%-01-01') AND DATE('%3%-12-31')") % calendarId % year1 % year2;
 			holidays = QuantIO::dbConnection.getTableData2(holQuery3.str(), false);
 		};
+
+		triggerHolidays0 = false;
+		triggerHolidays1 = false;
+		triggerHolidays2 = false;
+		triggerHolidays3 = false;
 
 		ImGui::Separator();
 
@@ -1315,15 +1298,18 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 				ImGui::PopItemWidth();
 
 				ImGui::Unindent(50.0f);
-				ImGui::SetCursorPosY(250 - 1.5f * buttonSz.y);
+				ImGui::SetCursorPosY(250 - 1.6f * buttonSz.y);
 				ImGui::Separator();
 				if (ImGui::Button("Close", buttonSz)) {
 					ImGui::CloseCurrentPopup();
+					holidayDate = CreateDateNow();
+					sprintf(holidaydescription, "%s", "\0");
 					sprintf(holidayDateChar, "%s", "\0");
 				}
 				ImGui::SetItemDefaultFocus();
 				ImGui::SameLine();
-				if (ImGui::Button("Save", buttonSz) && strlen(holidaydescription) > 0) {
+				if (ImGui::Button("Save", buttonSz) && strlen(holidaydescription) > 1 && toOut >= fromOut && 
+					toOut <= 2199 && fromOut >= 1970) {
 					ImGui::OpenPopup("Holiday Confirmation");
 				}
 					
@@ -1343,7 +1329,7 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 					ImGui::Spacing();
 					ImGui::TextUnformatted("For these dates:");
 					ImGui::Spacing();
-					ImGui::BeginChild("##HolidaysToInsert", ImVec2(0.0f, -1.5f * buttonSz.y), true, ImGuiWindowFlags_AlwaysAutoResize);
+					ImGui::BeginChild("##HolidaysToInsert", ImVec2(0.0f, -1.6f * buttonSz.y), true, ImGuiWindowFlags_AlwaysAutoResize);
 					{
 						for (int i = fromOut; i <= toOut; i++) {
 							std::string confirmOut = std::to_string(i) + holidayDateChar;
@@ -1353,24 +1339,46 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 					
 					ImGui::EndChild();
 
-					ImGui::SetCursorPosY(400 - 1.5f * buttonSz.y);
+					ImGui::SetCursorPosY(400 - 1.6f * buttonSz.y);
 					ImGui::Separator();
 					if (ImGui::Button("OK", buttonSz)) {
 						std::string insertString;
 						for (int i = fromOut; i <= toOut; i++) {
 							std::string part1 = "('%1%', '";
 							std::string part2 = std::to_string(i) + holidayDateChar;
-							std::string part3 = "', '%2%')";
+							std::string part3 = "', \"%2%\")";
 							std::string part4 = "";
 							if (i != toOut)
 								part4 = ", ";
 							insertString.append(part1 + part2 + part3 + part4);
 						}
 						std::string insertQuery = "INSERT INTO HOLIDAYS (CALENDAR, DATE, HOLIDAY_DESC) VALUES " +
-							insertString + ";";
+							insertString;
 						boost::format insertFinal = boost::format(insertQuery) % calendarId % holidaydescription;
 						QuantIO::dbConnection.updateData(insertFinal.str());
+
+
 						ImGui::CloseCurrentPopup();
+						
+						switch (holidaysToShow) {
+						case 0:
+							triggerHolidays0 = true;
+							break;
+						case 1:
+							triggerHolidays1 = true;
+							break;
+						case 2:
+							triggerHolidays2 = true;
+							break;
+						case 3:
+							triggerHolidays3 = true;
+							break;
+						default:
+							break;
+						}
+
+						ImGui::ClosePopupToLevel(1, true);
+						
 						holidayListInit++;
 						holidaysInMonthInit++;
 						//dateInit++;
@@ -1437,13 +1445,13 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 					}
 					bool openHolidayDeletePopup = false;
 					bool openHolidayDeleteAnnualPopup = false;
-					bool openHolidayInsertPopup = false;
+					bool openHolidayEditPopup = false;
 
 					if (ImGui::BeginPopupContextItem("HolidaysContextPopup")) {
 						selectedHolidayId = holidayCurrentRow[0];
-						/*if (ImGui::MenuItem("Insert Annual Holiday", NULL)) {
-							openHolidayInsertPopup = true;
-						}*/
+						if (ImGui::MenuItem("Modify Holiday Description", NULL)) {
+							openHolidayEditPopup = true;
+						}
 						ImGui::Separator();
 						if (ImGui::MenuItem("Delete", NULL)) {
 							openHolidayDeletePopup = true;
@@ -1453,8 +1461,8 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 						}
 						ImGui::EndPopup();
 					}
-					if (openHolidayInsertPopup) {
-						ImGui::OpenPopup("Insert Annual Holiday");
+					if (openHolidayEditPopup) {
+						ImGui::OpenPopup("Edit Holiday Description");
 					}
 					if (openHolidayDeletePopup) {
 						ImGui::OpenPopup("Delete Holiday");
@@ -1466,128 +1474,111 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 					ImGui::SetNextWindowPos(QuantIO::popupLocation(ImGui::GetWindowPos(), ImVec2(2.0f, 2.0f)),
 						ImGuiCond_Appearing, ImVec2(0.0f, 0.0f));
 					ImGui::SetNextWindowSize(ImVec2(900, 250), ImGuiCond_FirstUseEver);
-					if (ImGui::BeginPopupModal("Insert Annual Holiday", NULL, ImGuiWindowFlags_NoResize |
-						ImGuiWindowFlags_NoSavedSettings)) {
+					if (ImGui::BeginPopupModal("Edit Holiday Description", NULL, ImGuiWindowFlags_NoResize |
+						ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar)) {
 						ImGui::Spacing();
 						ImGui::Indent(50.0f);
-						
-						static tm holidayDate = CreateDateNow();
-						static char holidayDateChar[10] = { '\0' };
+					
 						static char holidaydescription[64] = "\0";
+						static bool modifyAll = false;
 
-						static int from = today.tm_year + 1900;
-						static int to = today.tm_year + 1950;
-						
-						ImGui::PushItemWidth(675.0f);
-						ImGui::DragIntRange2("##From1", &from, &to, 1, 1970, 2199, "From %d", "To %d");
-						ImGui::PopItemWidth();
-						ImGui::SameLine();
-						HelpMarker("Double click to enter years manually");
-						ImGui::Dummy(ImVec2(0.0f, 5.0f));
-						ImGui::TextUnformatted("Date: ");
-						ImGui::SameLine(0.f, 150.0f - ImGui::CalcTextSize("Date: ").x);
-						ImGui::PushItemWidth(35.0f * 3.5f);
-						if (ImGui::DateChooser2("##holidayDate", holidayDate, "%Y-%m-%d", false, NULL,
-							ICON_FA_CHEVRON_CIRCLE_LEFT, ICON_FA_CHEVRON_CIRCLE_RIGHT)) {
-
+						if (openHolidayEditPopup) {
+							//strncpy(holidaydescription, holidayCurrentRow[2].c_str(), sizeof(holidaydescription));
+							//holidaydescription[sizeof(holidaydescription) - 1] = 0;
+							modifyAll = false;
 						}
-						ImGui::PopItemWidth();
+
+						ImGui::AlignTextToFramePadding();
 						ImGui::TextUnformatted("Description: ");
 						ImGui::SameLine(0.f, 150.0f - ImGui::CalcTextSize("Description: ").x);
 						ImGui::PushItemWidth(35.0f * 15.0f);
 						ImGui::InputText("##description", holidaydescription, IM_ARRAYSIZE(holidaydescription));
 						ImGui::PopItemWidth();
 
+						ImGui::AlignTextToFramePadding();
+						ImGui::TextUnformatted("Modify all: ");
+						ImGui::SameLine(0.f, 150.0f - ImGui::CalcTextSize("Modify all: ").x);
+						ImGui::Checkbox("##ModifyAll", &modifyAll);
+
 						ImGui::Unindent(50.0f);
-						ImGui::SetCursorPosY(250 - 1.5f * buttonSz.y);
+						ImGui::SetCursorPosY(250 - 1.6f * buttonSz.y);
 						ImGui::Separator();
 						if (ImGui::Button("Close", buttonSz)) {
 							ImGui::CloseCurrentPopup();
-							sprintf(holidayDateChar, "%s", "\0");
+							modifyAll = false;
+							strcpy(holidaydescription, "\0");
 						}
 						ImGui::SetItemDefaultFocus();
 						ImGui::SameLine();
-						if (ImGui::Button("Save", buttonSz) && strlen(holidaydescription) > 0) {
-							ImGui::OpenPopup("Holiday Confirmation");
-						}
-						ImGui::SetNextWindowPos(QuantIO::popupLocation(ImGui::GetWindowPos(), ImVec2(2.0f, 2.0f)),
-							ImGuiCond_Appearing, ImVec2(0.0f, 0.0f));
-						ImGui::SetNextWindowSize(ImVec2(400, 400), ImGuiCond_FirstUseEver);
-						if (ImGui::BeginPopupModal("Holiday Confirmation", NULL, ImGuiWindowFlags_NoResize |
-							ImGuiWindowFlags_NoSavedSettings)) {
-							sprintf(holidayDateChar, "-%02d-%02d",
-								holidayDate.tm_mon + 1,
-								holidayDate.tm_mday);
-							ImGui::Spacing();
+						if (ImGui::Button("Save", buttonSz) && strlen(holidaydescription) > 1) {
+							std::string holidayDate = holidayCurrentRow[1].substr(5, 5);
 
-							ImGui::TextUnformatted("Insert the following holiday");
-							ImGui::Spacing();
-							ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), holidaydescription);
-							ImGui::Spacing();
-							ImGui::TextUnformatted("For these dates:");
-							ImGui::Spacing();
-							ImGui::BeginChild("##HolidaysToInsert", ImVec2(0.0f, -1.5f * buttonSz.y), true, ImGuiWindowFlags_AlwaysAutoResize);
-							{
-								for (int i = from; i <= to; i++) {
-									std::string confirmOut = std::to_string(i) + holidayDateChar;
-									ImGui::Text(confirmOut.c_str());
-								}
+							boost::format updateQuery1 = boost::format("UPDATE HOLIDAYS SET HOLIDAY_DESC = \"%1%\" WHERE CALENDAR = %2% AND HOLIDAY_ID = %3%") % holidaydescription % calendarId % selectedHolidayId;
+
+							boost::format updateQuery2 = boost::format("UPDATE HOLIDAYS SET HOLIDAY_DESC = \"%1%\" WHERE CALENDAR = %2% AND HOLIDAY_DESC = \"%3%\" AND DATE LIKE '%%%4%'") % holidaydescription % calendarId % holidayCurrentRow[2] % holidayDate;
+
+							std::string finalUpdatequery = modifyAll ? updateQuery2.str() : updateQuery1.str();
+
+							QuantIO::dbConnection.updateData(finalUpdatequery);
+
+							switch (holidaysToShow) {
+							case 0:
+								triggerHolidays0 = true;
+								break;
+							case 1:
+								triggerHolidays1 = true;
+								break;
+							case 2:
+								triggerHolidays2 = true;
+								break;
+							case 3:
+								triggerHolidays3 = true;
+								break;
+							default:
+								break;
 							}
-
-							ImGui::EndChild();
-
-							ImGui::SetCursorPosY(400 - 1.5f * buttonSz.y);
-							ImGui::Separator();
-							if (ImGui::Button("OK", buttonSz)) {
-								std::string insertString;
-								for (int i = from; i <= to; i++) {
-									std::string part1 = "('%1%', '";
-									std::string part2 = std::to_string(i) + holidayDateChar;
-									std::string part3 = "', '%2%')";
-									std::string part4 = "";
-									if (i != to)
-										part4 = ", ";
-									insertString.append(part1 + part2 + part3 + part4);
-								}
-								std::string insertQuery = "INSERT INTO HOLIDAYS (CALENDAR, DATE, HOLIDAY_DESC) VALUES " +
-									insertString + ";";
-								boost::format insertFinal = boost::format(insertQuery) % calendarId % holidaydescription;
-								QuantIO::dbConnection.updateData(insertFinal.str());
-								ImGui::CloseCurrentPopup();
-								holidayListInit++;
-								holidaysInMonthInit++;
-								dateInit++;
-							}
-							ImGui::SetItemDefaultFocus();
-							ImGui::SameLine();
-							if (ImGui::Button("Cancel", buttonSz)) {
-								ImGui::CloseCurrentPopup();
-							}
-							ImGui::EndPopup();
-
+							
+							ImGui::CloseCurrentPopup();
+							modifyAll = false;
+							strcpy(holidaydescription, "\0");
 						}
 						ImGui::EndPopup();
 					}
 
 					ImGui::SetNextWindowPos(QuantIO::popupLocation(ImGui::GetWindowPos(), ImVec2(2.0f, 2.0f)),
 						ImGuiCond_Appearing, ImVec2(0.0f, 0.0f));
-					ImGui::SetNextWindowSize(ImVec2(900, 150), ImGuiCond_FirstUseEver);
+					ImGui::SetNextWindowSize(ImVec2(400, 150), ImGuiCond_FirstUseEver);
 					if (ImGui::BeginPopupModal("Delete Holiday", NULL, ImGuiWindowFlags_NoResize |
 						ImGuiWindowFlags_NoSavedSettings)) {
 						ImGui::Spacing();
 
 						ImGui::Text("Delete holiday?\n\n");
-						ImGui::SetCursorPosY(150 - 1.5f * buttonSz.y);
+						ImGui::SetCursorPosY(150 - 1.6f * buttonSz.y);
 						ImGui::Separator();
 						if (ImGui::Button("OK", buttonSz)) {
-							boost::format holidayDelete = boost::format("DELETE FROM HOLIDAYS WHERE HOLIDAY_ID = %1%") % selectedHolidayId;
-							//printf("%s", adhocDelete.str().c_str());
+							boost::format holidayDelete = boost::format("DELETE FROM HOLIDAYS WHERE HOLIDAY_ID = %1% AND CALENDAR = %2%") % selectedHolidayId % calendarId;
 							QuantIO::dbConnection.updateData(holidayDelete.str());
+
+							switch (holidaysToShow) {
+							case 0:
+								triggerHolidays0 = true;
+								break;
+							case 1:
+								triggerHolidays1 = true;
+								break;
+							case 2:
+								triggerHolidays2 = true;
+								break;
+							case 3:
+								triggerHolidays3 = true;
+								break;
+							default:
+								break;
+							}
+
 							holidaysInMonthInit++;
 							holidayListInit++;
-
-							holidays.erase(holidays.begin() + i);
-							
+							holidays.erase(holidays.begin() + i);							
 							ImGui::CloseCurrentPopup();
 						}
 						ImGui::SetItemDefaultFocus();
@@ -1600,7 +1591,7 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 
 					ImGui::SetNextWindowPos(QuantIO::popupLocation(ImGui::GetWindowPos(), ImVec2(2.0f, 2.0f)),
 						ImGuiCond_Appearing, ImVec2(0.0f, 0.0f));
-					ImGui::SetNextWindowSize(ImVec2(900, 200), ImGuiCond_FirstUseEver);
+					ImGui::SetNextWindowSize(ImVec2(400, 150), ImGuiCond_FirstUseEver);
 					if (ImGui::BeginPopupModal("Delete Annual Holiday", NULL, ImGuiWindowFlags_NoResize |
 						ImGuiWindowFlags_NoSavedSettings)) {
 						ImGui::Spacing();
@@ -1608,15 +1599,34 @@ void CalendarImplementation(std::string& weekend, std::string& calendarId) {
 
 
 						ImGui::Text("Delete Annual holiday?\n\n");
-						ImGui::SetCursorPosY(200 - 1.5f * buttonSz.y);
+						ImGui::SetCursorPosY(150 - 1.6f * buttonSz.y);
 						ImGui::Separator();
 						if (ImGui::Button("OK", buttonSz)) {
-							//boost::format holidayDelete = boost::format("DELETE FROM HOLIDAYS_ADHOC WHERE HOLIDAY_ID = %1%") % selectedHolidayId;
-							////printf("%s", adhocDelete.str().c_str());
-							//QuantIO::dbConnection.updateData(holidayDelete.str());
-							//holidayListInit++;
-							//holidaysInMonthInit++;
-							//dateInit++;
+							std::string holidayDate = holidayCurrentRow[1].substr(5, 5);
+							std::string holidayDescr = holidayCurrentRow[2];
+							boost::format holidaysDelete = boost::format("DELETE FROM HOLIDAYS WHERE DATE LIKE '%%%1%' AND HOLIDAY_DESC = \"%2%\" AND CALENDAR = %3%") % holidayDate % holidayDescr % calendarId;
+							
+							QuantIO::dbConnection.updateData(holidaysDelete.str());
+							
+							switch (holidaysToShow) {
+							case 0:
+								triggerHolidays0 = true;
+								break;
+							case 1:
+								triggerHolidays1 = true;
+								break;
+							case 2:
+								triggerHolidays2 = true;
+								break;
+							case 3:
+								triggerHolidays3 = true;
+								break;
+							default:
+								break;
+							}
+
+							holidaysInMonthInit++;
+							holidayListInit++;
 							ImGui::CloseCurrentPopup();
 						}
 						ImGui::SetItemDefaultFocus();
@@ -1642,7 +1652,7 @@ void CalendarAdhocHolidays(std::string& calendarId) {
 	ImGui::BeginChild("##AdhocHolidays", ImVec2(0, 450.0f), false, ImGuiWindowFlags_NoBackground);
 	{
 		if (adhocHolidaysInMonthInit & 1) {
-			boost::format adhoHholInMonthQuery = boost::format("SELECT HOLIDAY_ID, DATE, HOLIDAY_DESC FROM HOLIDAYS_ADHOC WHERE CALENDAR = %1% ORDER BY DATE ASC" ) % calendarId;
+			boost::format adhoHholInMonthQuery = boost::format("SELECT HOLIDAY_ID, DATE, HOLIDAY_DESC, CALENDAR FROM HOLIDAYS_ADHOC WHERE CALENDAR = %1% ORDER BY DATE ASC" ) % calendarId;
 			adhocHolidays = QuantIO::dbConnection.getTableData2(adhoHholInMonthQuery.str(), false);
 			adhocHolidaysInMonthInit++;
 		}
@@ -1705,7 +1715,7 @@ void CalendarAdhocHolidays(std::string& calendarId) {
 						ImGui::Spacing();
 
 						ImGui::Text("Delete holiday?\n\n");
-						ImGui::SetCursorPosY(150 - 1.5f * buttonSz.y);
+						ImGui::SetCursorPosY(150 - 1.6f * buttonSz.y);
 						ImGui::Separator();
 						if (ImGui::Button("OK", buttonSz)) { 
 							boost::format adhocDelete = boost::format("DELETE FROM HOLIDAYS_ADHOC WHERE HOLIDAY_ID = %1%") % selectedAdhocId;
@@ -1771,7 +1781,7 @@ void CalendarAdhocHolidays(std::string& calendarId) {
 
 		//ImGui::Text(std::to_string(strlen(description)).c_str());
 
-		ImGui::SetCursorPosY(200 - 1.5f * buttonSz.y);
+		ImGui::SetCursorPosY(200 - 1.6f * buttonSz.y);
 		ImGui::Separator();
 		if (ImGui::Button("Close", buttonSz)) {
 			ImGui::CloseCurrentPopup();
@@ -1780,7 +1790,7 @@ void CalendarAdhocHolidays(std::string& calendarId) {
 		if (ImGui::Button("Save", buttonSz)) {
 			if (strlen(description) > 0) {
 				sprintf(adHocDateChar, "%04d-%02d-%02d", adHocDate.tm_year + 1900, adHocDate.tm_mon + 1, adHocDate.tm_mday);
-				boost::format insert = boost::format("INSERT INTO HOLIDAYS_ADHOC (CALENDAR, DATE, HOLIDAY_DESC) VALUES ('%1%', '%2%', '%3%')") % calendarId % adHocDateChar % description;
+				boost::format insert = boost::format("INSERT INTO HOLIDAYS_ADHOC (CALENDAR, DATE, HOLIDAY_DESC) VALUES ('%1%', '%2%', \"%3%\")") % calendarId % adHocDateChar % description;
 				QuantIO::dbConnection.updateData(insert.str());
 				adhocHolidaysInMonthInit++;
 				holidayListInit++;
