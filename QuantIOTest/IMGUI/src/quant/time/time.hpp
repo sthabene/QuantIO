@@ -35,10 +35,12 @@ inline CustomDayCounter createDayCounter(std::string& dayCounterId, std::string&
 
 	CustomCalendar calendar = createCalendar(calendarId);
 
-	boost::format dayCounterQuery = boost::format("SELECT COUNTER_ID, COUNTER_NAME, COUNTER_DESCR, DAY_COUNT, YEAR_FRAC FROM DAY_COUNTER WHERE COUNTER_ID = %1%") % dayCounterId;
+	boost::format dayCounterQuery = boost::format("SELECT COUNTER_ID, COUNTER_NAME, COUNTER_DESCR, DAY_COUNT_CODE, YEAR_FRAC_CODE, CODE, INCLUSIVE, DAY_COUNT, DENOMINATOR FROM DAY_COUNTER WHERE COUNTER_ID = %1%") % dayCounterId;
 	std::vector<std::string> dayCounterVector = QuantIO::dbConnection.getTableData2(dayCounterQuery.str(), false, false)[0];
 
-	CustomDayCounter customDayCounter(dayCounterVector[1], dayCounterVector[3], dayCounterVector[4], calendar);
+	CustomDayCounter customDayCounter(dayCounterVector[1], dayCounterVector[3], dayCounterVector[4], calendar, 
+		dayCounterVector[5] == "1", dayCounterVector[6] == "1", std::stoi(dayCounterVector[7]),
+		std::stoi(dayCounterVector[8]));
 
 	return customDayCounter;
 }

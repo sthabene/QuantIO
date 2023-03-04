@@ -13,7 +13,7 @@
 #include <time.h>   // very common plain c header file used only by DateChooser
 #endif //NO_IMGUIDATECHOOSER
 
-#define IMGUI_LEFT_LABEL(func, label, ...) ( ImGui::AlignTextToFramePadding(), ImGui::TextUnformatted(label), ImGui::SameLine(), func("##" label, __VA_ARGS__))
+#define IMGUI_INPUT_LEFT(label, hiddenLabel, value, size, width, ...) ( ImGui::SetCursorPosX(width - ImGui::CalcTextSize(label).x - 30.0f), ImGui::AlignTextToFramePadding(), ImGui::TextUnformatted(label), ImGui::SameLine(), ImGui::PushItemWidth(25.0f * 10.0f), ImGui::InputText(hiddenLabel, value, size, __VA_ARGS__), ImGui::PopItemWidth())
 
 static std::string query = "SELECT CODE, NAME FROM CURRENCY ORDER BY CODE";
 static std::string title = "Currency###";
@@ -187,7 +187,7 @@ void QuantIOCurrency::DisplayContents() {
 
 						if (ImGui::MenuItem("Open", "Enter")) {
 							//Populate selected item
-							popupInputFlags = ImGuiInputTextFlags_ReadOnly;
+							popupInputFlags = ImGuiInputTextFlags_None;
 							roundingTabItemFlags = ImGuiTabItemFlags_None;
 							std::string roundQuery = "SELECT LABEL FROM ROUNDING";
 							rounding = QuantIO::dbConnection.getTableData2(roundQuery.c_str(), false, true)[0];
@@ -197,7 +197,7 @@ void QuantIOCurrency::DisplayContents() {
 							openOpenPopup = true;
 						};
 
-						if (ImGui::MenuItem("Edit", "Ctrl + Enter")) {
+						/*if (ImGui::MenuItem("Edit", "Ctrl + Enter")) {
 							popupInputFlags = ImGuiInputTextFlags_None;
 							roundingTabItemFlags = ImGuiTabItemFlags_None;
 							std::string roundQuery = "SELECT LABEL FROM ROUNDING";
@@ -206,7 +206,7 @@ void QuantIOCurrency::DisplayContents() {
 							selectedRow = QuantIO::dbConnection.getTableData2(openQuery.str(), false, false)[0];
 
 							openEditPopup = true;
-						};
+						};*/
 						ImGui::Separator();
 						if (ImGui::MenuItem("Refresh", "F5")) {
 							refresh++;
@@ -252,7 +252,7 @@ void QuantIOCurrency::DisplayContents() {
 
 					//Open Popup
 					if (openOpenPopup) {
-						title = "Currency: Read-only mode";
+						title = "Currency";
 						ImGui::OpenPopup(title.c_str());
 						//openOpenPopup = false;
 					}
@@ -310,46 +310,19 @@ void QuantIOCurrency::DisplayContents() {
 						ImGui::PopItemWidth();
 						ImGui::Spacing();
 
-
-						static float nameLabelWidth = ImGui::CalcTextSize("Name:").x;
-						static float codeLabelWidth = ImGui::CalcTextSize("Numeric code:").x;
-						static float symbolLabelWidth = ImGui::CalcTextSize("Symbol:").x;
-						static float fractionLabelWidth = ImGui::CalcTextSize("Fraction Symbol:").x;
-						static float fractionUnitLabelWidth = ImGui::CalcTextSize("Fractions Per Unit:").x;
-						static float triangualtionLabelWidth = ImGui::CalcTextSize("Triangualtion:").x;
-
-						float nameWidth = ImGui::CalcTextSize(selectedRow[1].c_str()).x + 15.0f;
-						float codeWidth = ImGui::CalcTextSize(selectedRow[2].c_str()).x + 15.0f;
-						float symbolWidth = ImGui::CalcTextSize(selectedRow[3].c_str()).x + 15.0f;
-						float fractionWidth = ImGui::CalcTextSize(selectedRow[4].c_str()).x + 15.0f;
-						float triangualtionWidth = ImGui::CalcTextSize(selectedRow[7].c_str()).x + 15.0f;
-
-						///
-
-						float titleWidth = ImGui::CalcTextSize(selectedRow[1].c_str()).x + 15.0f;
-						float descWidth = ImGui::CalcTextSize(selectedRow[5].c_str()).x + 15.0f;
-						float regionWidth = ImGui::CalcTextSize(selectedRow[2].c_str()).x + 15.0f;
-
-						ImGui::Dummy(ImVec2(0.0f, 35.0f));	
-
-						ImGui::SetCursorPosX(400.0f - (titleWidth + 50.0f) * 0.5f);
-						ImGui::PushItemWidth(titleWidth);
-						ImGui::InputText("##Name", (char*)selectedRow[1].c_str(), 32,
+						IMGUI_INPUT_LEFT("Name:", "##Name", (char*)selectedRow[1].c_str(), 32, 400.0f,
 							ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
-						ImGui::PopItemWidth();
 
+						IMGUI_INPUT_LEFT("Numeric Code:", "##NCode", (char*)selectedRow[2].c_str(), 
+							16, 400.0f, ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
 						
-						ImGui::Indent(180.0f);
+						IMGUI_INPUT_LEFT("Symbol:", "##Symbol", (char*)selectedRow[3].c_str(), 16, 400.0f,
+							ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
+
+						IMGUI_INPUT_LEFT("Fraction Symbol:", "##Fraction", (char*)selectedRow[4].c_str(), 
+							16, 400.0f, ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
+												
 						ImGui::PushItemWidth(rowHeight * 10.0f);
-
-						ImGui::InputText("Numeric code", (char*)selectedRow.at(2).c_str(), 32,
-							popupInputFlags | ImGuiInputTextFlags_CharsDecimal);
-
-						ImGui::InputText("Symbol", (char*)selectedRow.at(3).c_str(), 32,
-							popupInputFlags);
-
-						ImGui::InputText("Fraction Symbol", (char*)selectedRow.at(4).c_str(), 32,
-							popupInputFlags);
 
 						std::string fracSymbol = selectedRow.at(5);
 						const char* fracSymbols[6] = { "1", "10", "100", "1000", "10000", "100000" };
@@ -358,8 +331,7 @@ void QuantIOCurrency::DisplayContents() {
 							(fracSymbol == "10") ? 1 : 
 							(fracSymbol == "100") ? 2 : 
 							(fracSymbol == "1000") ? 3 : 
-							(fracSymbol == "10000") ? 4 : 5;
-						
+							(fracSymbol == "10000") ? 4 : 5;						
 
 						static int itemCurrent = 0;
 						if (openEditPopup || openOpenPopup) {
@@ -368,36 +340,34 @@ void QuantIOCurrency::DisplayContents() {
 
 						const char* fracPreview = fracSymbols[itemCurrent];
 
-						if (ImGui::BeginCombo("Fractions Per Unit", fracPreview,
+						ImGui::SetCursorPosX(400.0f - ImGui::CalcTextSize("Fractions Per Unit:").x - 30.0f);
+						ImGui::AlignTextToFramePadding();
+						ImGui::TextUnformatted("Fractions Per Unit:");
+						ImGui::SameLine();
+						ImGui::PushItemWidth(25.0f * 10.0f);
+						if (ImGui::BeginCombo("##FractionsPerUnit", fracPreview,
 							ImGuiComboFlags_PopupAlignLeft)) {
 							for (int n = 0; n < IM_ARRAYSIZE(fracSymbols); n++) {
-
-								const bool isSelected = (itemCurrent == n);
-								
+								const bool isSelected = (itemCurrent == n);								
 								if (ImGui::Selectable(fracSymbols[n], isSelected)) {
 									itemCurrent = n;
-									//itemCurrent = n;
 								}
-
 								if (isSelected) {
 									ImGui::SetItemDefaultFocus();
 								}
 							}
 							ImGui::EndCombo();
 						}
+						ImGui::PopItemWidth();
 
 						ImGui::SameLine();
 						HelpMarker("Number of fractionary parts in a unit");
 
-						
-						
-						ImGui::InputText("Triangualtion", (char*)selectedRow.at(7).c_str(), 32,
-							popupInputFlags);
+						IMGUI_INPUT_LEFT("Triangualtion:", "##Triangualtion", (char*)selectedRow[7].c_str(),
+							32, 400.0f, ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
 
 						ImGui::SameLine();
 						HelpMarker("Cross currency triangulation");
-						ImGui::PopItemWidth();
-						ImGui::Unindent(180.0f);
 
 						ImGui::Spacing();
 						ImGui::Separator();
@@ -483,38 +453,29 @@ void QuantIOCurrency::DisplayContents() {
 									ImGui::TextDisabled("Rouding");
 									ImGui::Spacing();
 
-									ImGui::Indent(60.0f);
-									ImGui::PushItemWidth(rowHeight * 15.0f);
+									IMGUI_INPUT_LEFT("Label:", "##Label", (char*)currentRounding.c_str(), 32, 300.0f, 
+										ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
 
-									//ImGui::PushStyleColor(ImGuiCol_Text, 
-										//ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
-
-									ImGui::InputText("Label", (char*)currentRounding.c_str(), 32,
-										ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_ReadOnly);
-
-
-									ImGui::InputText("Type", 
-										(char*)getRoundingType(currentRoundingType).c_str(), 
-										32, ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
+									IMGUI_INPUT_LEFT("Type:", "##Type", 
+										(char*)getRoundingType(currentRoundingType).c_str(), 32, 300.0f, 
+										ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_AutoSelectAll);
 
 									//ImGui::PopStyleColor();
 									static ImVec4 frameBg_precision = ImGui::GetStyle().Colors[ImGuiCol_FrameBg];
 									ImGui::PushStyleColor(ImGuiCol_FrameBg, frameBg_precision);
-									ImGui::InputText("Precision",
-										(char*)currentRoundingPrecision.c_str(),
-										32, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CallbackCharFilter,
+									IMGUI_INPUT_LEFT("Precision:", "##Precision",
+										(char*)currentRoundingPrecision.c_str(), 32, 300.0f,
+										ImGuiInputTextFlags_CallbackCharFilter | ImGuiInputTextFlags_AutoSelectAll, 
 										QuantIO::NumericFilter::Filter);
 									ImGui::PopStyleColor();
 
 									static ImVec4 frameBg_digit = ImGui::GetStyle().Colors[ImGuiCol_FrameBg];
 									ImGui::PushStyleColor(ImGuiCol_FrameBg, frameBg_digit);
-									ImGui::InputText("Digit",
-										(char*)currentRoundingDigits.c_str(),
-										32, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CallbackCharFilter,
+									IMGUI_INPUT_LEFT("Digit:", "##Digit",
+										(char*)currentRoundingDigits.c_str(), 32, 300.0f,
+										ImGuiInputTextFlags_CallbackCharFilter | ImGuiInputTextFlags_AutoSelectAll,
 										QuantIO::NumericFilter::Filter);
 									ImGui::PopStyleColor();
-
-									ImGui::Unindent(60.0f);
 
 									ImGui::SetCursorPosY(400 - 1.6f * buttonSz.y);
 									ImGui::Separator();
@@ -582,36 +543,39 @@ void QuantIOCurrency::DisplayContents() {
 									ImGui::TextDisabled("Rouding");
 									ImGui::Spacing();
 
-									ImGui::Indent(60.0f);
-									ImGui::PushItemWidth(rowHeight * 15.0f);
-
 									static char label[32];
 									static int type = 0;
 									static char precision[32] = "0";
 									static char digit[32] = "0";
 
-									ImGui::InputText("Label", label, 32);
+									IMGUI_INPUT_LEFT("Label:", "##Label",
+										label, 32, 300.0f,
+										ImGuiInputTextFlags_None);
 
-									
-									ImGui::Combo("Type", &type,
+									ImGui::SetCursorPosX(300.0f - ImGui::CalcTextSize("Type:").x - 30.0f);
+									ImGui::AlignTextToFramePadding();
+									ImGui::TextUnformatted("Type:");
+									ImGui::SameLine();
+									ImGui::PushItemWidth(25.0f * 10.0f);									
+									ImGui::Combo("##Type", &type,
 										"None\0Up\0Down\0Closest\0Ceiling\0Floor\0\0");
+									ImGui::PopItemWidth();
 
 									static ImVec4 frameBg_precision = ImGui::GetStyle().Colors[ImGuiCol_FrameBg];
 									ImGui::PushStyleColor(ImGuiCol_FrameBg, frameBg_precision);
-									ImGui::InputText("Precision", precision, 32, 
+									IMGUI_INPUT_LEFT("Precision:", "##Precision",
+										precision, 32, 300.0f,
 										ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CallbackCharFilter,
 										QuantIO::NumericFilter::Filter);
 									ImGui::PopStyleColor();
 
 									static ImVec4 frameBg_digit = ImGui::GetStyle().Colors[ImGuiCol_FrameBg];
 									ImGui::PushStyleColor(ImGuiCol_FrameBg, frameBg_digit);
-									ImGui::InputText("Digit", digit, 32, ImGuiInputTextFlags_AutoSelectAll |
-										ImGuiInputTextFlags_CallbackCharFilter,
+									IMGUI_INPUT_LEFT("Digit:", "##Digit",
+										digit, 32, 300.0f,
+										ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CallbackCharFilter,
 										QuantIO::NumericFilter::Filter);
 									ImGui::PopStyleColor();
-
-
-									ImGui::Unindent(60.0f);
 
 									ImGui::SetCursorPosY(400 - 1.6f * buttonSz.y);
 									ImGui::Separator();

@@ -160,7 +160,6 @@
     <ClCompile Include="src\gui\gui.cpp" />
     <ClCompile Include="src\gui\guiaddons.cpp" />
     <ClCompile Include="src\gui\guiconfig.cpp" />
-    <ClCompile Include="src\gui\guiexamples.cpp" />
     <ClCompile Include="src\gui\guilayoutpopups.cpp" />
     <ClCompile Include="src\quant\config\config.cpp" />
     <ClCompile Include="src\quant\currencies\currencies.cpp" />
@@ -177,9 +176,12 @@
     <ClCompile Include="..\..\vendor\imgui\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="..\..\vendor\imgui\backends\imgui_impl_opengl3.cpp" />
     <ClCompile Include="..\..\vendor\imgui\addons\imguidatechooser\imguidatechooser.cpp" />
+    <ClCompile Include="src\quant\indexes\inflationindexes.cpp" />
+    <ClCompile Include="src\quant\indexes\interestrateindexes.cpp" />
     <ClCompile Include="src\quant\math\rounding\rounding.cpp" />
     <ClCompile Include="src\quant\tables\tables.cpp" />
     <ClCompile Include="src\quant\time\calendars.cpp" />
+    <ClCompile Include="src\quant\time\dayconventions.cpp" />
     <ClCompile Include="src\quant\time\daycounters.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -197,6 +199,7 @@
     <ClInclude Include="src\gui\include\guitables.hpp" />
     <ClInclude Include="src\gui\include\guitools.hpp" />
     <ClInclude Include="src\gui\include\guiwidgets.hpp" />
+    <ClInclude Include="src\quant\indexes\indexes.hpp" />
     <ClInclude Include="src\quant\quant.hpp" />
     <ClInclude Include="src\quant\tables\tables.hpp" />
     <ClInclude Include="src\quant\time\time.hpp" />

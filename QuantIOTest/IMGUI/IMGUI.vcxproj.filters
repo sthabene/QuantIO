@@ -24,9 +24,6 @@
     <ClCompile Include="src\gui\guiconfig.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\gui\guiexamples.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\gui\guilayoutpopups.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -93,6 +90,15 @@
     <ClCompile Include="..\QUANTLIB\src\time\daycounter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\quant\time\dayconventions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\quant\indexes\interestrateindexes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\quant\indexes\inflationindexes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\vendor\imgui\imconfig.h">
@@ -144,6 +150,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\quant\time\time.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\quant\indexes\indexes.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

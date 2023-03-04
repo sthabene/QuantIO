@@ -17,6 +17,12 @@ static std::string dayFuncStatus = "";
 static std::string calendar = "";
 static std::vector<std::vector<std::string>> calendarList;
 
+static int dayCountOpIndex = 0;
+static bool inclusive = false;
+static int numeratorNum = 0;
+static int denominatorNum = 0;
+static char denominatorCustomValue[32] = { '\0' };
+
 //Day counter items
 float dayCountWidth = 0.f;
 
@@ -141,7 +147,7 @@ void QuantIODayCounters::DisplayContents() {
 						selections.push_back(currentRow->at(0));
 
 						if (ImGui::MenuItem("Open", "Enter")) {
-							boost::format openQuery = boost::format("SELECT COUNTER_ID, COUNTER_NAME, COUNTER_DESCR, DAY_COUNT, YEAR_FRAC FROM DAY_COUNTER WHERE COUNTER_ID = %1%") % 
+							boost::format openQuery = boost::format("SELECT COUNTER_ID, COUNTER_NAME, COUNTER_DESCR, DAY_COUNT_CODE, YEAR_FRAC_CODE, CODE, INCLUSIVE, DAY_COUNT, DENOMINATOR FROM DAY_COUNTER WHERE COUNTER_ID = %1%") % 
 								currentRow->at(0);
 							selectedRow = QuantIO::dbConnection.getTableData2(openQuery.str(), false, false)[0];
 
@@ -152,14 +158,21 @@ void QuantIODayCounters::DisplayContents() {
 							CustomCalendar customCalendar = createCalendar(calendarList[0][0]);
 
 							mainDayCounter.setAnotherDayCounter(selectedRow[1], selectedRow[3], selectedRow[4], 
-								customCalendar);
+								customCalendar, selectedRow[5] == "1", selectedRow[6] == "1", std::stoi(selectedRow[7]),
+								std::stoi(selectedRow[8]));
+
+							dayCountOpIndex = std::stoi(selectedRow[7]);
+							inclusive = selectedRow[6] == "1";
+							numeratorNum = 0;
+							denominatorNum = std::stoi(selectedRow[8]);
+							sprintf(denominatorCustomValue, "%s", "365\0");
 
 							openOpenPopup = true;
 						}
 
-						if (ImGui::MenuItem("Edit", "Ctrl + Enter")) {
+						/*if (ImGui::MenuItem("Edit", "Ctrl + Enter")) {
 
-						}
+						}*/
 
 						ImGui::Separator();
 						if (ImGui::MenuItem("Refresh", "F5")) {
@@ -294,10 +307,9 @@ void QuantIODayCounters::DisplayContents() {
 							"dayCount (Day1, Day2, Month1, Month2, Year1, Year2)",
 							"yearFraction (Day1, Day2, Month1, Month2, Year1, Year2)"};
 
-						std::vector<std::string> dayCountOptions = { "Actual", "Business Days", 
-						"30", "30_US", "30_ISMA", "30_EU", "30_IT", "30_NASD", "30_BASIC", "One"};
+						std::vector<std::string> dayCountOptions = { "30", "30 Bond Basis", "30 Eurobond Basis", "30 European", "30 German", "30 ISDA", "30 ISMA", "30 Italian", "30 NASD", "30 USA", "Actual", "Actual AFB", "Actual Bond", "Actual Euro", "Actual Fixed Canadian", "Actual Fixed No Leap", "Actual Fixed Standard", "Actual Historical", "Actual ISDA", "Actual ISMA", "Business", "One" };
 
-						const char* denominator[] = { "180", "252", "360", "364", "365", "365.25", "366", "Actual", "One", "Custom" };
+						const char* denominator[] = { "252", "360", "364", "365", "365.25", "366", "Actual", "One", "Custom" };
 
 						if (ImGui::BeginTabBar("DayCounterTabBar", ImGuiTabBarFlags_None)) {
 							static const char* configItems[] = { "Day Count", "Year Fraction" };
@@ -315,21 +327,15 @@ void QuantIODayCounters::DisplayContents() {
 									ImGui::TextUnformatted("Day Count: ");
 									ImGui::SameLine(0.f, 150.0f - ImGui::CalcTextSize("Day Count: ").x);
 
-									static int dayCountOpIndex = 0;
-									static bool inclusive = false;
-									static bool noLeapYear = false;
-									static int numeratorNum = 0;
-									static int denominatorNum = 0;
-									static char denominatorCustomValue[32] = { '\0' };
+									
 
-									if (openOpenPopup) {
-										dayCountOpIndex = 0;
-										inclusive = false;
-										noLeapYear = false;
+									/*if (openOpenPopup) {
+										dayCountOpIndex = std::stoi(selectedRow[7]);
+										inclusive = selectedRow[6] == "1";
 										numeratorNum = 0;
-										denominatorNum = 0;
+										denominatorNum = std::stoi(selectedRow[8]);
 										sprintf(denominatorCustomValue, "%s", "365\0");
-									}
+									}*/
 
 									std::string currentDayCount = dayCountOptions[dayCountOpIndex];
 									ImGui::PushItemWidth(35.0f * 7.5f);
@@ -355,11 +361,6 @@ void QuantIODayCounters::DisplayContents() {
 									ImGui::SameLine(0.f, 150.0f - ImGui::CalcTextSize("Inclusive: ").x);
 									ImGui::Checkbox("##Inclusive", &inclusive);
 
-									ImGui::AlignTextToFramePadding();
-									ImGui::TextUnformatted("No Leap Year: ");
-									ImGui::SameLine(0.f, 150.0f - ImGui::CalcTextSize("No Leap Year: ").x);
-									ImGui::Checkbox("##NoLeapYear", &noLeapYear);
-
 									ImGui::Unindent(50.0f);
 
 									ImGui::Dummy(ImVec2(0.0f, 100.0f));
@@ -383,7 +384,7 @@ void QuantIODayCounters::DisplayContents() {
 									ImGui::Combo("##Denominator", &denominatorNum, denominator, 
 										IM_ARRAYSIZE(denominator));
 									ImGui::PopItemWidth();
-									if (denominatorNum == 6) {										
+									if (denominatorNum == 8) {										
 										ImGui::SameLine();
 										ImGui::PushItemWidth(35.0f * 3.5f);
 										ImGui::InputText("##DenominatorCustom", denominatorCustomValue, 32,
@@ -660,7 +661,10 @@ void QuantIODayCounters::DisplayContents() {
 														calendarList[n][0]);
 													mainDayCounter.setAnotherDayCounter(selectedRow[1], 
 														selectedRow[3], selectedRow[4],
-														anotherCustomCalendar);
+														anotherCustomCalendar, selectedRow[5] == "1", 
+														selectedRow[6] == "1", std::stoi(selectedRow[7]),
+														std::stoi(selectedRow[8]));
+
 													calsInit++;
 												}
 												currentCalIndex = n;

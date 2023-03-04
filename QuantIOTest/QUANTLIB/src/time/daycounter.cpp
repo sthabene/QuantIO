@@ -5,9 +5,11 @@
 static CustomCalendar customCalendar;
 
 CustomDayCounter::CustomDayCounter(std::string& name, std::string& dayCountFunction, 
-	std::string& yearFractionFunction, CustomCalendar& calendar) {
+	std::string& yearFractionFunction, CustomCalendar& calendar, 
+	bool code, bool inclusive, unsigned int dayCount, unsigned int denominator) {
 	QuantLib::ext::shared_ptr<QuantLib::DayCounter::Impl> customDayCountImpl(
-		new CustomDayCounter::CustomDayCounterImpl(name, dayCountFunction, yearFractionFunction));
+		new CustomDayCounter::CustomDayCounterImpl(name, dayCountFunction, yearFractionFunction, 
+			code, inclusive, dayCount, denominator));
 	this->impl_ = customDayCountImpl;
 	customCalendar = calendar;
 }
@@ -18,9 +20,10 @@ CustomDayCounter::CustomDayCounter(const CustomDayCounter& customDayCounter) {
 }
 
 void CustomDayCounter::setAnotherDayCounter(std::string& name, std::string& dayCountFunction,
-	std::string& yearFractionFunction, CustomCalendar& calendar) {
+	std::string& yearFractionFunction, CustomCalendar& calendar, 
+	bool code, bool inclusive, unsigned int dayCount, unsigned int denominator) {
 	QuantLib::ext::shared_ptr<QuantLib::DayCounter::Impl> customDayCountImpl(
-		new CustomDayCounter::CustomDayCounterImpl(name, dayCountFunction, yearFractionFunction));
+		new CustomDayCounter::CustomDayCounterImpl(name, dayCountFunction, yearFractionFunction, code, inclusive, dayCount, denominator));
 	impl_ = customDayCountImpl;
 	customCalendar = calendar;
 };
@@ -30,19 +33,184 @@ std::string CustomDayCounter::CustomDayCounterImpl::name() const {
 	return this->m_dayCounterName;
 };
 
-QuantLib::Date::serial_type CustomDayCounter::CustomDayCounterImpl::dayCount(const QuantLib::Date& d1, 
-	const QuantLib::Date& d2) const {
+QuantLib::Date::serial_type CustomDayCounter::CustomDayCounterImpl::dayCount(const QuantLib::Date& d2, 
+	const QuantLib::Date& d1) const {
 	
-	QuantLib::Date::serial_type dayCount = getDayCount(d1, d2, this->m_dayCountFunction, this->m_yearFractionFunction);
+	QuantLib::Date::serial_type dayCount = 0;
 
-	return dayCount;
+	if (this->m_code) {
+		dayCount = getDayCount(d1, d2, this->m_dayCountFunction, this->m_yearFractionFunction);
+	}
+	else {
+		switch (this->m_dayCount) {
+		case 0: dayCount = QuantLib::Thirty360(QuantLib::Thirty360::Convention::BondBasis).dayCount(d2, d1);
+			break;
+		case 1: dayCount = QuantLib::Thirty360(QuantLib::Thirty360::Convention::BondBasis).dayCount(d2, d1);
+			break;
+		case 2: dayCount = QuantLib::Thirty360(QuantLib::Thirty360::Convention::EurobondBasis).dayCount(d2, d1);
+			break;
+		case 3: dayCount = QuantLib::Thirty360(QuantLib::Thirty360::Convention::European).dayCount(d2, d1);
+			break;
+		case 4: dayCount = QuantLib::Thirty360(QuantLib::Thirty360::Convention::German).dayCount(d2, d1);
+			break;
+		case 5: dayCount = QuantLib::Thirty360(QuantLib::Thirty360::Convention::ISDA).dayCount(d2, d1);
+			break;
+		case 6: dayCount = QuantLib::Thirty360(QuantLib::Thirty360::Convention::ISMA).dayCount(d2, d1);
+			break;
+		case 7: dayCount = QuantLib::Thirty360(QuantLib::Thirty360::Convention::Italian).dayCount(d2, d1);
+			break;
+		case 8: dayCount = QuantLib::Thirty360(QuantLib::Thirty360::Convention::NASD).dayCount(d2, d1);
+			break;
+		case 9: dayCount = QuantLib::Thirty360(QuantLib::Thirty360::Convention::USA).dayCount(d2, d1);
+			break;
+		case 10: dayCount = QuantLib::ActualActual(QuantLib::ActualActual::Convention::Actual365).dayCount(d2, d1);
+			break;
+		case 11: dayCount = QuantLib::ActualActual(QuantLib::ActualActual::Convention::AFB).dayCount(d2, d1);
+			break;
+		case 12: dayCount = QuantLib::ActualActual(QuantLib::ActualActual::Convention::Bond).dayCount(d2, d1);
+			break;
+		case 13: dayCount = QuantLib::ActualActual(QuantLib::ActualActual::Convention::Euro).dayCount(d2, d1);
+			break;
+		case 14: dayCount = QuantLib::Actual365Fixed(QuantLib::Actual365Fixed::Convention::Canadian).dayCount(d2, d1);
+			break;
+		case 15: dayCount = QuantLib::Actual365Fixed(QuantLib::Actual365Fixed::Convention::NoLeap).dayCount(d2, d1);
+			break;
+		case 16: dayCount = QuantLib::Actual365Fixed(QuantLib::Actual365Fixed::Convention::Standard).dayCount(d2, d1);
+			break;
+		case 17: dayCount = QuantLib::ActualActual(QuantLib::ActualActual::Convention::Historical).dayCount(d2, d1);
+			break;
+		case 18: dayCount = QuantLib::ActualActual(QuantLib::ActualActual::Convention::ISDA).dayCount(d2, d1);
+			break;
+		case 19: dayCount = QuantLib::ActualActual(QuantLib::ActualActual::Convention::ISMA).dayCount(d2, d1);
+			break;
+		case 20: dayCount = QuantLib::Business252(customCalendar).dayCount(d2, d1);
+			break;
+		case 21: dayCount = QuantLib::OneDayCounter().dayCount(d2, d1);
+			break;
+		default:
+			dayCount = (int)QuantLib::daysBetween(d2, d1);
+			break;
+		}
+	}
+
+	return dayCount + (this->m_inclusive ? 1 : 0);
 }
 
-QuantLib::Time CustomDayCounter::CustomDayCounterImpl::yearFraction(const QuantLib::Date& d1, 
-	const QuantLib::Date& d2, const QuantLib::Date&, const QuantLib::Date&) const {
+QuantLib::Time CustomDayCounter::CustomDayCounterImpl::yearFraction(const QuantLib::Date& d2, 
+	const QuantLib::Date& d1, const QuantLib::Date&, const QuantLib::Date&) const {
 
-	QuantLib::Time yearFraction = getYearFraction(d1, d2, this->m_dayCountFunction, this->m_yearFractionFunction);
+	QuantLib::Time yearFraction = 0;
 
+	if (this->m_code) {
+		yearFraction = getYearFraction(d1, d2, this->m_dayCountFunction, this->m_yearFractionFunction);
+	}
+	else {
+
+		switch (this->m_denominator) {
+		case 0:
+			yearFraction = QuantLib::Business252(customCalendar).yearFraction(d2, d1);
+			break;
+		case 1:
+			switch (this->m_dayCount) {
+			case 0: yearFraction = QuantLib::Thirty360(QuantLib::Thirty360::Convention::BondBasis).yearFraction(d2, d1);
+				break;
+			case 1: yearFraction = QuantLib::Thirty360(QuantLib::Thirty360::Convention::BondBasis).yearFraction(d2, d1);
+				break;
+			case 2: yearFraction = QuantLib::Thirty360(QuantLib::Thirty360::Convention::EurobondBasis).yearFraction(d2, d1);
+				break;
+			case 3: yearFraction = QuantLib::Thirty360(QuantLib::Thirty360::Convention::European).yearFraction(d2, d1);
+				break;
+			case 4: yearFraction = QuantLib::Thirty360(QuantLib::Thirty360::Convention::German).yearFraction(d2, d1);
+				break;
+			case 5: yearFraction = QuantLib::Thirty360(QuantLib::Thirty360::Convention::ISDA).yearFraction(d2, d1);
+				break;
+			case 6: yearFraction = QuantLib::Thirty360(QuantLib::Thirty360::Convention::ISMA).yearFraction(d2, d1);
+				break;
+			case 7: yearFraction = QuantLib::Thirty360(QuantLib::Thirty360::Convention::Italian).yearFraction(d2, d1);
+				break;
+			case 8: yearFraction = QuantLib::Thirty360(QuantLib::Thirty360::Convention::NASD).yearFraction(d2, d1);
+				break;
+			case 9: yearFraction = QuantLib::Thirty360(QuantLib::Thirty360::Convention::USA).yearFraction(d2, d1);
+				break;
+			default:
+				yearFraction = QuantLib::Actual360(this->m_inclusive).yearFraction(d2, d1);
+				break;
+			}
+			break;
+		case 2: 
+			yearFraction = QuantLib::Actual364().yearFraction(d2, d1);
+			break;
+		case 3: 
+			switch (this->m_dayCount) {
+			case 0: yearFraction = QuantLib::Thirty365().yearFraction(d2, d1); break;
+			case 1: yearFraction = QuantLib::Thirty365().yearFraction(d2, d1); break;
+			case 2: yearFraction = QuantLib::Thirty365().yearFraction(d2, d1); break;
+			case 3: yearFraction = QuantLib::Thirty365().yearFraction(d2, d1); break;
+			case 4: yearFraction = QuantLib::Thirty365().yearFraction(d2, d1); break;
+			case 5: yearFraction = QuantLib::Thirty365().yearFraction(d2, d1); break;
+			case 6: yearFraction = QuantLib::Thirty365().yearFraction(d2, d1); break;
+			case 7: yearFraction = QuantLib::Thirty365().yearFraction(d2, d1); break;
+			case 8: yearFraction = QuantLib::Thirty365().yearFraction(d2, d1); break;
+			case 9: yearFraction = QuantLib::Thirty365().yearFraction(d2, d1); break;
+			case 10: 
+				yearFraction = QuantLib::ActualActual(QuantLib::ActualActual::Convention::Actual365).yearFraction(d2, d1);
+				break;
+			case 14: 
+				yearFraction = QuantLib::Actual365Fixed(
+					QuantLib::Actual365Fixed::Convention::Canadian).yearFraction(d2, d1); 
+				break;
+			case 15: 
+				yearFraction = QuantLib::Actual365Fixed(
+					QuantLib::Actual365Fixed::Convention::NoLeap).yearFraction(d2, d1); 
+				break;
+			case 16: 
+				yearFraction = QuantLib::Actual365Fixed(
+					QuantLib::Actual365Fixed::Convention::Standard).yearFraction(d2, d1); 
+				break;
+			default:
+				yearFraction = QuantLib::ActualActual(QuantLib::ActualActual::Convention::Actual365).yearFraction(d2, d1);
+				break;
+			}
+			break;
+		case 4:
+			yearFraction = QuantLib::Actual36525(this->m_inclusive).yearFraction(d2, d1);
+			break;
+		case 5:
+			yearFraction = QuantLib::Actual366(this->m_inclusive).yearFraction(d2, d1);
+			break;
+		case 6:
+			switch (this->m_dayCount) {
+			case 11: 
+				yearFraction = QuantLib::ActualActual(QuantLib::ActualActual::Convention::AFB).yearFraction(d2, d1); 
+				break;
+			case 12: 
+				yearFraction = QuantLib::ActualActual(QuantLib::ActualActual::Convention::Bond).yearFraction(d2, d1); 
+				break;
+			case 13: 
+				yearFraction = QuantLib::ActualActual(QuantLib::ActualActual::Convention::Euro).yearFraction(d2, d1); 
+				break;
+			case 17: 
+				yearFraction = QuantLib::ActualActual(QuantLib::ActualActual::Convention::Historical).yearFraction(d2, d1); 
+				break;
+			case 18: 
+				yearFraction = QuantLib::ActualActual(QuantLib::ActualActual::Convention::ISDA).yearFraction(d2, d1); 
+				break;
+			case 19: 
+				yearFraction = QuantLib::ActualActual(QuantLib::ActualActual::Convention::ISMA).yearFraction(d2, d1); 
+				break;
+			default:
+				yearFraction = QuantLib::ActualActual(QuantLib::ActualActual::Convention::Actual365).yearFraction(d2, d1);
+				break;
+			}
+			break;
+		case 7:
+			yearFraction = QuantLib::OneDayCounter().yearFraction(d2, d1); 
+			break;
+		default:
+			yearFraction = QuantLib::OneDayCounter().yearFraction(d2, d1);
+			break;
+		}
+	}
 	return yearFraction;
 }
 
@@ -88,7 +256,7 @@ int businessDaysBetweenLua(lua_State* L) {
 	return 1; //number of results */
 }
 
-QuantLib::Time getYearFraction(const QuantLib::Date& date1, const QuantLib::Date& date2,
+QuantLib::Time getYearFraction(const QuantLib::Date& date2, const QuantLib::Date& date1,
 	const std::string& dayCountFunction, const std::string& yearFracFunction) {
 
 	double yearFracResult = 0;
@@ -131,7 +299,7 @@ QuantLib::Time getYearFraction(const QuantLib::Date& date1, const QuantLib::Date
 	return yearFracResult;
 }
 
-QuantLib::Date::serial_type getDayCount(const QuantLib::Date& date1, const QuantLib::Date& date2,
+QuantLib::Date::serial_type getDayCount(const QuantLib::Date& date2, const QuantLib::Date& date1,
 	const std::string& dayCountFunction, const std::string& yearFracFunction) {
 
 	int dayCountResult = 0;

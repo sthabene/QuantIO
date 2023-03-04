@@ -47,6 +47,27 @@ void CalendarAdhocHolidays(std::string& calendarId);
 //Day counters
 class QuantIODayCounters : public QuantIO::Window {
 public:
-	QuantIODayCounters() : Window("Day Counters", "Time", true) { };
+	QuantIODayCounters() : Window("Day Counters", "Time", false) { };
+	void DisplayContents() override;
+};
+
+//Day conventions -- Removed it
+class QuantIODayConventions : public QuantIO::Window {
+public:
+	QuantIODayConventions() : Window("Day Conventions", "Time", false) { };
+	void DisplayContents() override;
+};
+
+//Interest Rate Indexes
+class QuantIOInterestRateIndexes : public QuantIO::Window {
+public:
+	QuantIOInterestRateIndexes() : Window("Interest Rate Indexes", "Indexes", false) { };
+	void DisplayContents() override;
+};
+
+//Inflation Indexes
+class QuantIOInflationIndexes : public QuantIO::Window {
+public:
+	QuantIOInflationIndexes() : Window("Inflation Indexes", "Indexes", false) { };
 	void DisplayContents() override;
 };

@@ -148,9 +148,9 @@ void QuantIORounding::DisplayContents() {
 						};
 
 						//ImGui::Separator();
-						if (ImGui::MenuItem("Edit", "Ctrl + Enter")) {
-							//openCurrenciesPopup = true;
-						};
+						//if (ImGui::MenuItem("Edit", "Ctrl + Enter")) {
+						//	//openCurrenciesPopup = true;
+						//};
 						ImGui::Separator();
 						ImGui::MenuItem("Insert", "Insert");
 						ImGui::MenuItem("Duplicate", "Ctrl + D");
