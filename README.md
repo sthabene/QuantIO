@@ -14,8 +14,8 @@ Quantitative Finance
 # Screenshots
 
 <a>
-    <img src="misc/screenshots/screen1.png" width="45%">
+    <img src="misc/screenshots/screen1.png">
 </a>
 <a>
-    <img src="misc/screenshots/screen2.png" width="45%">
+    <img src="misc/screenshots/screen2.png">
 </a>
